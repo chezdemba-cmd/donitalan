@@ -111,6 +111,7 @@ export async function POST(request: NextRequest) {
     const truck = await prisma.truck.create({
       data: {
         ...data,
+        truckType: data.truckType as any,
         ownerId: owner.id,
         status: 'PENDING_VALIDATION',
         currency: 'XOF',
