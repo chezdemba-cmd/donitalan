@@ -378,7 +378,7 @@ export async function POST(
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, error: 'Données invalides', details: error.errors }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Données invalides', details: error.flatten().fieldErrors }, { status: 400 })
     }
     console.error('Booking action error:', error)
     return NextResponse.json({ success: false, error: 'Erreur serveur' }, { status: 500 })
