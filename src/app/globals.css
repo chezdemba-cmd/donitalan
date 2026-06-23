@@ -1,0 +1,449 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* ============================================================
+   DESIGN SYSTEM — DoniTalan
+   ============================================================ */
+
+:root {
+  /* Colors */
+  --color-primary: #1A3A5C;
+  --color-primary-light: #2B5F96;
+  --color-accent: #F97316;
+  --color-accent-dark: #EA6A10;
+  --color-success: #22C55E;
+  --color-warning: #EAB308;
+  --color-danger: #EF4444;
+  --color-surface: #F8FAFC;
+  --color-dark: #0F172A;
+  --color-text: #1E293B;
+  --color-muted: #64748B;
+  --color-border: #E2E8F0;
+  --color-white: #FFFFFF;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+  --shadow-glow: 0 0 20px rgba(249,115,22,0.2);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+
+@layer components {
+
+  /* --- BUTTONS --- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl font-semibold transition-all duration-200 cursor-pointer select-none whitespace-nowrap;
+    min-height: 48px;
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+
+  .btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-600 active:scale-95 shadow-md;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent text-white hover:bg-accent-600 active:scale-95 shadow-md;
+    box-shadow: 0 4px 16px rgba(249,115,22,0.35);
+  }
+
+  .btn-accent:hover {
+    box-shadow: 0 6px 24px rgba(249,115,22,0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    @apply btn border-2 border-primary text-primary bg-transparent hover:bg-primary hover:text-white active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-muted hover:bg-slate-100 active:scale-95;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90 active:scale-95;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-white hover:opacity-90 active:scale-95;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .btn-lg {
+    min-height: 56px;
+    padding: 16px 32px;
+    font-size: 17px;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  /* --- CARDS --- */
+  .card {
+    @apply bg-white rounded-2xl p-6 shadow-card border border-slate-100;
+    transition: box-shadow var(--transition-base), transform var(--transition-base);
+  }
+
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  .card-interactive {
+    @apply card cursor-pointer;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+  }
+
+  /* --- INPUTS --- */
+  .input-base {
+    @apply w-full rounded-xl border border-slate-200 bg-white px-4 text-slate-900 transition-all duration-200;
+    min-height: 48px;
+    font-size: 15px;
+    color: var(--color-text);
+  }
+
+  .input-base::placeholder {
+    color: var(--color-muted);
+  }
+
+  .input-base:focus {
+    @apply outline-none border-primary ring-2 ring-primary ring-opacity-20;
+  }
+
+  .input-base:disabled {
+    @apply bg-slate-50 cursor-not-allowed;
+    color: var(--color-muted);
+  }
+
+  .input-error {
+    @apply border-danger ring-2 ring-danger ring-opacity-20;
+  }
+
+  .label {
+    @apply block text-sm font-semibold mb-1.5;
+    color: var(--color-text);
+  }
+
+  .error-text {
+    @apply text-danger text-sm mt-1;
+  }
+
+  /* --- BADGES --- */
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary bg-opacity-10 text-primary;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent bg-opacity-10 text-accent-700;
+  }
+
+  .badge-success {
+    @apply badge bg-success bg-opacity-10 text-green-700;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning bg-opacity-10 text-yellow-700;
+  }
+
+  .badge-danger {
+    @apply badge bg-danger bg-opacity-10 text-red-700;
+  }
+
+  .badge-muted {
+    @apply badge bg-slate-100 text-muted;
+  }
+
+  /* --- LAYOUT --- */
+  .container-app {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-2xl sm:text-3xl font-bold text-text;
+  }
+
+  .page-subtitle {
+    @apply text-muted mt-1;
+  }
+
+  /* --- STATS CARD --- */
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-primary;
+  }
+
+  .stat-label {
+    @apply text-sm text-muted;
+  }
+
+  /* --- SECTION --- */
+  .section {
+    @apply py-12 sm:py-16;
+  }
+
+  /* --- DIVIDER --- */
+  .divider {
+    @apply border-t border-slate-100 my-6;
+  }
+
+  /* --- LOADING --- */
+  .skeleton {
+    @apply bg-slate-200 rounded-xl animate-pulse;
+  }
+
+  /* --- OVERLAY --- */
+  .overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-40;
+  }
+
+  /* --- MOBILE NAV --- */
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 z-30;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-nav-item {
+    @apply flex flex-col items-center gap-1 py-2 px-3 text-muted transition-colors duration-200;
+    font-size: 10px;
+    font-weight: 600;
+    min-width: 60px;
+  }
+
+  .mobile-nav-item.active {
+    @apply text-accent;
+  }
+
+  /* --- STATUS INDICATORS --- */
+  .status-dot {
+    @apply inline-block w-2 h-2 rounded-full;
+  }
+
+  .status-dot-success { @apply status-dot bg-success; }
+  .status-dot-warning { @apply status-dot bg-warning; }
+  .status-dot-danger { @apply status-dot bg-danger; }
+  .status-dot-muted { @apply status-dot bg-muted; }
+
+  /* --- GRADIENT TEXT --- */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* --- HERO GRADIENT --- */
+  .hero-gradient {
+    background: linear-gradient(135deg, #1A3A5C 0%, #2B5F96 50%, #1A3A5C 100%);
+  }
+
+  /* --- GLASS CARD --- */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    @apply rounded-2xl;
+  }
+
+  /* --- TRUCK TYPE ICON --- */
+  .truck-icon-wrapper {
+    @apply flex items-center justify-center rounded-2xl;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, rgba(26,58,92,0.1), rgba(249,115,22,0.1));
+  }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* ============================================================
+   MOBILE FIRST
+   ============================================================ */
+
+/* Touch targets minimum 44px */
+button, a, input[type="checkbox"], input[type="radio"] {
+  min-height: 44px;
+}
+
+/* Smooth scrolling on mobile */
+.scroll-snap {
+  scroll-snap-type: x mandatory;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-snap::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-snap-item {
+  scroll-snap-align: start;
+}
+
+/* ============================================================
+   MAPBOX OVERRIDES
+   ============================================================ */
+
+.mapboxgl-map {
+  border-radius: 16px;
+}
+
+/* ============================================================
+   TOAST OVERRIDES
+   ============================================================ */
+
+.react-hot-toast {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* ============================================================
+   SCROLLBAR STYLING
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}

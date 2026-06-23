@@ -1,0 +1,670 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  CLIENT
+  COMPANY
+  TRUCK_OWNER
+  DRIVER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum KYCStatus {
+  PENDING
+  SUBMITTED
+  VERIFIED
+  REJECTED
+}
+
+enum TruckType {
+  PICKUP
+  MINIVAN
+  CARGO_VAN
+  TARPAULIN
+  FLATBED
+  TIPPER
+  REFRIGERATED
+  CRANE
+  SEMI_TRAILER
+  ROAD_TRACTOR
+  CONTAINER_CARRIER
+  CUSTOM
+}
+
+enum TruckStatus {
+  PENDING_VALIDATION
+  VALIDATED
+  SUSPENDED
+  REJECTED
+}
+
+enum DocumentType {
+  CARTE_GRISE
+  ASSURANCE
+  VISITE_TECHNIQUE
+  PERMIS_CHAUFFEUR
+  PHOTO_EXTERIEUR
+  PHOTO_INTERIEUR
+  ID_CARD
+  SELFIE
+  OTHER
+}
+
+enum ServiceType {
+  MOVING_RESIDENTIAL
+  MOVING_COMMERCIAL
+  TRUCK_RENTAL_HALF_DAY
+  TRUCK_RENTAL_FULL_DAY
+  TRUCK_RENTAL_MULTI_DAY
+  CARGO_TRANSPORT
+  LONG_TERM_CONTRACT
+  INTERCITY_TRANSPORT
+}
+
+enum BookingStatus {
+  DRAFT
+  PENDING_OWNER_ACCEPTANCE
+  ACCEPTED
+  AWAITING_PAYMENT
+  PAYMENT_SECURED
+  DRIVER_ASSIGNED
+  IN_PROGRESS
+  COMPLETED_PENDING_VALIDATION
+  COMPLETED
+  CANCELLED_BY_CLIENT
+  CANCELLED_BY_OWNER
+  DISPUTED
+  REFUNDED
+  CLOSED
+}
+
+enum PaymentMethod {
+  ORANGE_MONEY
+  WAVE
+  MOOV_MONEY
+  SAMA_MONEY
+  CORIS_MONEY
+  CARD_VISA
+  CARD_MASTERCARD
+  CASH
+  MTN_MONEY
+  FREE_MONEY
+  AIRTEL_MONEY
+  SIMULATED
+}
+
+enum PaymentStatus {
+  PENDING
+  INITIATED
+  FAILED
+  SECURED
+  PARTIALLY_PAID
+  RELEASED
+  REFUNDED
+  DISPUTED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DisputeStatus {
+  OPEN
+  IN_ANALYSIS
+  DOCUMENTS_REQUESTED
+  RESOLVED
+  PARTIAL_REFUND
+  FULL_REFUND
+  PAYMENT_RELEASED
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  PAYMENT_RECEIVED
+  PAYMENT_RELEASED
+  MISSION_STARTED
+  MISSION_COMPLETED
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  ACCOUNT_VERIFIED
+  TRUCK_VALIDATED
+  OTP_CODE
+  SYSTEM_ALERT
+}
+
+enum NotifChannel {
+  PUSH
+  SMS
+  WHATSAPP
+  EMAIL
+  IN_APP
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id            String     @id @default(cuid())
+  phone         String?    @unique
+  email         String?    @unique
+  passwordHash  String?
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  role          UserRole   @default(CLIENT)
+  status        UserStatus @default(PENDING_VERIFICATION)
+  phoneVerified Boolean    @default(false)
+  emailVerified Boolean    @default(false)
+  countryCode   String     @default("ML")
+  languagePref  String     @default("fr")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  client        Client?
+  company       Company?
+  truckOwner    TruckOwner?
+  driver        Driver?
+  admin         Admin?
+  auditLogs     AuditLog[]
+  notifications Notification[]
+  sentMessages  Message[]     @relation("SentMessages")
+  reviews       Review[]
+  otpCodes      OtpCode[]
+
+  @@index([phone])
+  @@index([email])
+  @@index([role])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  phone     String?
+  email     String?
+  code      String
+  purpose   String   // "phone_verification" | "login" | "mission_start" | "mission_end"
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([phone, code])
+  @@index([email, code])
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address   String?
+  bookings  Booking[] @relation("ClientBookings")
+  disputes  Dispute[] @relation("ClientDisputes")
+}
+
+model Company {
+  id          String     @id @default(cuid())
+  userId      String     @unique
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String
+  nif         String?
+  rccm        String?
+  address     String?
+  verified    Boolean    @default(false)
+  verifiedAt  DateTime?
+  bookings    Booking[]  @relation("CompanyBookings")
+  contracts   Contract[]
+}
+
+model TruckOwner {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idCardUrl         String?
+  selfieUrl         String?
+  kycStatus         KYCStatus @default(PENDING)
+  kycVerifiedAt     DateTime?
+  kycVerifiedBy     String?
+  bankAccount       String?
+  mobileMoneyNumber String?
+  mobileMoneyOperator String?
+  trucks            Truck[]
+  drivers           Driver[]
+  payouts           Payout[]
+  totalEarnings     Decimal  @default(0) @db.Decimal(12, 2)
+}
+
+model Driver {
+  id            String     @id @default(cuid())
+  userId        String     @unique
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ownerId       String
+  owner         TruckOwner @relation(fields: [ownerId], references: [id])
+  licenseNumber String
+  licenseUrl    String?
+  licenseExpiry DateTime?
+  licenseClass  String?
+  verified      Boolean    @default(false)
+  bookings      Booking[]  @relation("DriverBookings")
+}
+
+model Admin {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level  Int    @default(1) // 1=admin, 2=super-admin
+}
+
+model Truck {
+  id                String        @id @default(cuid())
+  ownerId           String
+  owner             TruckOwner    @relation(fields: [ownerId], references: [id])
+  brand             String
+  model             String
+  year              Int
+  licensePlate      String        @unique
+  truckType         TruckType
+  capacityTons      Decimal       @db.Decimal(8, 2)
+  volumeM3          Decimal?      @db.Decimal(8, 2)
+  description       String?       @db.Text
+  basePrice         Decimal       @db.Decimal(12, 2)
+  pricePerKm        Decimal?      @db.Decimal(8, 2)
+  pricePerHour      Decimal?      @db.Decimal(8, 2)
+  currency          String        @default("XOF")
+  cityId            String
+  city              City          @relation(fields: [cityId], references: [id])
+  zones             String[]
+  withDriver        Boolean       @default(true)
+  status            TruckStatus   @default(PENDING_VALIDATION)
+  validatedAt       DateTime?
+  validatedBy       String?
+  rejectionReason   String?
+  availableFrom     DateTime?
+  availableTo       DateTime?
+  photoUrls         String[]
+  averageRating     Decimal       @default(0) @db.Decimal(3, 2)
+  totalTrips        Int           @default(0)
+  featured          Boolean       @default(false)
+  documents         TruckDocument[]
+  bookings          Booking[]     @relation("TruckBookings")
+  reviews           Review[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([cityId, status])
+  @@index([truckType, status])
+}
+
+model TruckDocument {
+  id          String       @id @default(cuid())
+  truckId     String
+  truck       Truck        @relation(fields: [truckId], references: [id], onDelete: Cascade)
+  docType     DocumentType
+  fileUrl     String
+  fileName    String?
+  expiryDate  DateTime?
+  verified    Boolean      @default(false)
+  verifiedAt  DateTime?
+  verifiedBy  String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+}
+
+model Booking {
+  id                  String               @id @default(cuid())
+  bookingNumber       String               @unique
+  clientId            String?
+  client              Client?              @relation("ClientBookings", fields: [clientId], references: [id])
+  companyId           String?
+  company             Company?             @relation("CompanyBookings", fields: [companyId], references: [id])
+  truckId             String
+  truck               Truck                @relation("TruckBookings", fields: [truckId], references: [id])
+  driverId            String?
+  driver              Driver?              @relation("DriverBookings", fields: [driverId], references: [id])
+  serviceType         ServiceType
+  status              BookingStatus        @default(DRAFT)
+
+  // Localisation
+  departureAddress    String
+  departureLat        Decimal?             @db.Decimal(10, 7)
+  departureLng        Decimal?             @db.Decimal(10, 7)
+  departureCity       String?
+  arrivalAddress      String
+  arrivalLat          Decimal?             @db.Decimal(10, 7)
+  arrivalLng          Decimal?             @db.Decimal(10, 7)
+  arrivalCity         String?
+  estimatedDistKm     Decimal?             @db.Decimal(8, 2)
+
+  // Dates
+  scheduledAt         DateTime
+  estimatedDuration   Int?                 // en heures
+  startedAt           DateTime?
+  completedAt         DateTime?
+
+  // Prix
+  basePrice           Decimal              @db.Decimal(12, 2)
+  distancePrice       Decimal?             @db.Decimal(12, 2)
+  handlingFee         Decimal?             @db.Decimal(12, 2)
+  urgencyFee          Decimal?             @db.Decimal(12, 2)
+  waitingFee          Decimal?             @db.Decimal(12, 2)
+  platformFee         Decimal              @db.Decimal(12, 2)
+  totalPrice          Decimal              @db.Decimal(12, 2)
+  depositAmount       Decimal?             @db.Decimal(12, 2)
+  currency            String               @default("XOF")
+
+  // OTP missions
+  startOtp            String?
+  startOtpUsed        Boolean              @default(false)
+  startOtpUsedAt      DateTime?
+  endOtp              String?
+  endOtpUsed          Boolean              @default(false)
+  endOtpUsedAt        DateTime?
+
+  // Preuves
+  photosBeforeUrls    String[]
+  photosAfterUrls     String[]
+  clientSignatureUrl  String?
+  deliveryNoteUrl     String?
+
+  // Info cargo
+  cargoDescription    String?              @db.Text
+  cargoWeightKg       Decimal?             @db.Decimal(8, 2)
+  cargoVolumeM3       Decimal?             @db.Decimal(8, 2)
+  specialRequirements String?              @db.Text
+  nbHandlers          Int                  @default(0)
+  notes               String?              @db.Text
+  cancelReason        String?
+
+  payment             Payment?
+  statusHistory       BookingStatusHistory[]
+  dispute             Dispute?
+  reviews             Review[]
+  messages            Message[]
+
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  @@index([clientId, status])
+  @@index([truckId, status])
+  @@index([status])
+}
+
+model BookingStatusHistory {
+  id        String        @id @default(cuid())
+  bookingId String
+  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  status    BookingStatus
+  note      String?
+  changedBy String?
+  createdAt DateTime      @default(now())
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  bookingId      String        @unique
+  booking        Booking       @relation(fields: [bookingId], references: [id])
+  amount         Decimal       @db.Decimal(12, 2)
+  depositAmount  Decimal?      @db.Decimal(12, 2)
+  currency       String        @default("XOF")
+  method         PaymentMethod
+  provider       String?
+  providerRef    String?
+  providerStatus String?
+  status         PaymentStatus @default(PENDING)
+  platformFee    Decimal       @db.Decimal(12, 2)
+  ownerAmount    Decimal       @db.Decimal(12, 2)
+  paidAt         DateTime?
+  releasedAt     DateTime?
+  refundedAt     DateTime?
+  webhookData    Json?
+  receiptUrl     String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  payout         Payout?
+}
+
+model Payout {
+  id          String       @id @default(cuid())
+  ownerId     String
+  owner       TruckOwner   @relation(fields: [ownerId], references: [id])
+  paymentId   String       @unique
+  payment     Payment      @relation(fields: [paymentId], references: [id])
+  amount      Decimal      @db.Decimal(12, 2)
+  currency    String       @default("XOF")
+  method      PaymentMethod
+  phoneNumber String?
+  reference   String?
+  status      PayoutStatus @default(PENDING)
+  processedAt DateTime?
+  notes       String?
+  createdAt   DateTime     @default(now())
+}
+
+model Dispute {
+  id           String        @id @default(cuid())
+  bookingId    String        @unique
+  booking      Booking       @relation(fields: [bookingId], references: [id])
+  openedById   String
+  clientId     String?
+  client       Client?       @relation("ClientDisputes", fields: [clientId], references: [id])
+  reason       String
+  description  String        @db.Text
+  status       DisputeStatus @default(OPEN)
+  resolution   String?       @db.Text
+  resolvedBy   String?
+  resolvedAt   DateTime?
+  refundAmount Decimal?      @db.Decimal(12, 2)
+  evidenceUrls String[]
+  messages     Message[]     @relation("DisputeMessages")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  truckId   String?
+  truck     Truck?   @relation(fields: [truckId], references: [id])
+  rating    Int      // 1-5
+  comment   String?  @db.Text
+  reply     String?
+  repliedAt DateTime?
+  visible   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([bookingId, authorId])
+}
+
+model Message {
+  id         String    @id @default(cuid())
+  bookingId  String?
+  booking    Booking?  @relation(fields: [bookingId], references: [id])
+  disputeId  String?
+  dispute    Dispute?  @relation("DisputeMessages", fields: [disputeId], references: [id])
+  senderId   String
+  sender     User      @relation("SentMessages", fields: [senderId], references: [id])
+  content    String    @db.Text
+  fileUrl    String?
+  fileType   String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([bookingId])
+  @@index([disputeId])
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  userId    String
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  channels  NotifChannel[]
+  readAt    DateTime?
+  sentAt    DateTime?
+  createdAt DateTime           @default(now())
+
+  @@index([userId, readAt])
+}
+
+model Country {
+  id            String   @id @default(cuid())
+  code          String   @unique // "ML", "SN", "CI"
+  name          String
+  nativeName    String?
+  currency      String   // "XOF", "XAF"
+  currencySymbol String  @default("FCFA")
+  phonePrefix   String   // "+223"
+  flag          String?
+  active        Boolean  @default(true)
+  cities        City[]
+  paymentMethods CountryPaymentMethod[]
+}
+
+model City {
+  id        String   @id @default(cuid())
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id])
+  name      String
+  latitude  Decimal? @db.Decimal(10, 7)
+  longitude Decimal? @db.Decimal(10, 7)
+  active    Boolean  @default(true)
+  trucks    Truck[]
+
+  @@unique([countryId, name])
+}
+
+model CountryPaymentMethod {
+  id          String        @id @default(cuid())
+  countryId   String
+  country     Country       @relation(fields: [countryId], references: [id])
+  method      PaymentMethod
+  displayName String
+  logoUrl     String?
+  active      Boolean       @default(true)
+  feePercent  Decimal       @default(0) @db.Decimal(5, 2)
+  feeFixed    Decimal       @default(0) @db.Decimal(8, 2)
+  config      Json?
+
+  @@unique([countryId, method])
+}
+
+model Commission {
+  id            String       @id @default(cuid())
+  name          String
+  percent       Decimal      @db.Decimal(5, 2)
+  serviceType   ServiceType?
+  countryCode   String?
+  truckType     TruckType?
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+}
+
+model PricingRule {
+  id           String     @id @default(cuid())
+  name         String
+  truckType    TruckType?
+  cityId       String?
+  countryCode  String?
+  basePrice    Decimal    @db.Decimal(12, 2)
+  pricePerKm   Decimal?   @db.Decimal(8, 2)
+  pricePerHour Decimal?   @db.Decimal(8, 2)
+  currency     String     @default("XOF")
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+}
+
+model Promotion {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  description   String
+  discountType  String   // "percent" | "fixed"
+  discountValue Decimal  @db.Decimal(10, 2)
+  currency      String?
+  minOrderValue Decimal? @db.Decimal(12, 2)
+  usageLimit    Int?
+  usageCount    Int      @default(0)
+  startDate     DateTime
+  endDate       DateTime
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model Contract {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id])
+  truckId     String?
+  ownerId     String?
+  startDate   DateTime
+  endDate     DateTime?
+  monthlyRate Decimal        @db.Decimal(12, 2)
+  currency    String         @default("XOF")
+  status      ContractStatus @default(DRAFT)
+  terms       String?        @db.Text
+  documentUrl String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  oldData   Json?
+  newData   Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
