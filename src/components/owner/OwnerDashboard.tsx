@@ -10,7 +10,8 @@ import {
 import { Card, StatCard, Badge, Avatar } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { BottomNav } from '@/components/shared/Navigation'
-import { formatPrice, formatDate, getBookingStatusColor, BOOKING_STATUS_LABELS } from '@/lib/utils'
+import { formatPrice, formatDate, getBookingStatusColor } from '@/lib/utils'
+import { BOOKING_STATUS_LABELS } from '@/types'
 import type { BookingStatus } from '@/types'
 
 const ownerStats = [

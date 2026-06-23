@@ -6,7 +6,8 @@ import { Calendar, MapPin, Truck, ChevronRight, CheckCircle, Clock, AlertTriangl
 import { Card, Badge, EmptyState } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { BottomNav } from '@/components/shared/Navigation'
-import { formatPrice, formatDate, getBookingStatusColor, BOOKING_STATUS_LABELS } from '@/lib/utils'
+import { formatPrice, formatDate, getBookingStatusColor } from '@/lib/utils'
+import { BOOKING_STATUS_LABELS } from '@/types'
 import type { BookingStatus } from '@/types'
 
 const demoBookings = [
