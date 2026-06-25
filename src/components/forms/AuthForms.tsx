@@ -56,6 +56,7 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = React.useState(false)
   const [step, setStep] = React.useState<'form' | 'otp'>('form')
   const [registeredPhone, setRegisteredPhone] = React.useState('')
+  const [devCode, setDevCode] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
 
   const {
@@ -86,6 +87,9 @@ export function RegisterForm() {
         return
       }
 
+      if (result.devCode) {
+        setDevCode(result.devCode)
+      }
       setRegisteredPhone(data.phone)
       setStep('otp')
       toast.success('Code OTP envoyé sur votre téléphone !')
@@ -97,7 +101,7 @@ export function RegisterForm() {
   }
 
   if (step === 'otp') {
-    return <OtpVerificationForm phone={registeredPhone} onSuccess={() => router.push('/accueil')} />
+    return <OtpVerificationForm phone={registeredPhone} onSuccess={() => router.push('/accueil')} initialCode={devCode} />
   }
 
   return (
@@ -343,9 +347,10 @@ interface OtpVerificationProps {
   phone: string
   onSuccess: () => void
   purpose?: string
+  initialCode?: string | null
 }
 
-export function OtpVerificationForm({ phone, onSuccess, purpose = 'phone_verification' }: OtpVerificationProps) {
+export function OtpVerificationForm({ phone, onSuccess, purpose = 'phone_verification', initialCode }: OtpVerificationProps) {
   const [loading, setLoading] = React.useState(false)
   const [resendLoading, setResendLoading] = React.useState(false)
   const [countdown, setCountdown] = React.useState(60)
@@ -353,6 +358,13 @@ export function OtpVerificationForm({ phone, onSuccess, purpose = 'phone_verific
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
   const { handleSubmit } = useForm<OtpData>()
+
+  // Auto-fill OTP if provided
+  React.useEffect(() => {
+    if (initialCode && initialCode.length === 6) {
+      setOtpDigits(initialCode.split(''))
+    }
+  }, [initialCode])
 
   // Countdown timer
   React.useEffect(() => {
@@ -422,9 +434,13 @@ export function OtpVerificationForm({ phone, onSuccess, purpose = 'phone_verific
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, purpose }),
       })
+      const data = await res.json()
       if (res.ok) {
         toast.success('Nouveau code envoyé !')
         setCountdown(60)
+        if (data.devCode) {
+          setOtpDigits(data.devCode.split(''))
+        }
       }
     } catch {
       toast.error('Erreur lors de l\'envoi')

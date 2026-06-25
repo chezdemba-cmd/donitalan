@@ -2,6 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Search, SlidersHorizontal, Truck, Star, MapPin, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -259,18 +260,21 @@ export function TrucksSearchPage() {
 }
 
 function TruckCard({ truck }: { truck: typeof DEMO_TRUCKS[0] }) {
-  const truckEmojis: Record<TruckType, string> = {
-    PICKUP: '🚙', MINIVAN: '🚐', CARGO_VAN: '🚐', TARPAULIN: '🚛',
-    FLATBED: '🚚', TIPPER: '🪣', REFRIGERATED: '❄️', CRANE: '🏗️',
-    SEMI_TRAILER: '🚛', ROAD_TRACTOR: '🚜', CONTAINER_CARRIER: '📦', CUSTOM: '🚛',
+  const truckImages: Record<TruckType, string> = {
+    PICKUP: '/images/trucks/pickup.png', MINIVAN: '/images/trucks/cargo_van.png', 
+    CARGO_VAN: '/images/trucks/cargo_van.png', TARPAULIN: '/images/trucks/tarpaulin.png',
+    FLATBED: '/images/trucks/flatbed.png', TIPPER: '/images/trucks/tipper.png', 
+    REFRIGERATED: '/images/trucks/refrigerated.png', CRANE: '/images/trucks/flatbed.png',
+    SEMI_TRAILER: '/images/trucks/semi_trailer.png', ROAD_TRACTOR: '/images/trucks/semi_trailer.png', 
+    CONTAINER_CARRIER: '/images/trucks/semi_trailer.png', CUSTOM: '/images/trucks/tarpaulin.png',
   }
 
   return (
     <Link href={`/camions/${truck.id}`}>
       <Card interactive className="overflow-hidden p-0 h-full flex flex-col">
-        {/* Image placeholder */}
-        <div className="h-40 bg-gradient-to-br from-slate-100 to-slate-200 relative flex items-center justify-center">
-          <span className="text-6xl">{truckEmojis[truck.truckType]}</span>
+        {/* Image */}
+        <div className="h-48 bg-white relative flex items-center justify-center border-b border-slate-100">
+          <Image src={truckImages[truck.truckType]} alt={truck.brand} fill className="object-contain p-4 mix-blend-multiply" />
           <div className="absolute top-3 left-3">
             <Badge variant="success" dot>Disponible</Badge>
           </div>

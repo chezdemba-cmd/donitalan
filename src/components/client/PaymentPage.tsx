@@ -46,9 +46,25 @@ export function PaymentPageContent() {
     setProcessing(true)
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2500))
+      const response = await fetch('/api/payments/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, method: selectedMethod, truckId, phone })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Erreur lors de l\'initialisation du paiement');
+      }
 
+      // Redirection vers le portail opérateur (Orange Money / Wave / CinetPay)
+      if (data.redirectUrl) {
+        window.location.href = data.redirectUrl;
+        return;
+      }
+
+      // Cas: SIMULATED (pas de redirectUrl)
       setStep('done')
       setSuccess(true)
       toast.success('Paiement sécurisé ! Mission confirmée.')
@@ -56,10 +72,9 @@ export function PaymentPageContent() {
       setTimeout(() => {
         router.push('/reservations')
       }, 3000)
-    } catch {
-      toast.error('Erreur de paiement. Réessayez.')
+    } catch (err: any) {
+      toast.error(err.message || 'Erreur de paiement. Réessayez.')
       setStep('select')
-    } finally {
       setProcessing(false)
     }
   }

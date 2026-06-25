@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Compte créé (Mode Démo).',
         data: { userId: 'demo-user-123', phone: data.phone },
+        devCode: '123456',
       }, { status: 201 })
     }
 
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Compte créé. Vérifiez votre téléphone.',
       data: { userId: user.id, phone: user.phone },
+      ...(process.env.NODE_ENV === 'development' && { devCode: otp }),
     }, { status: 201 })
 
   } catch (error) {

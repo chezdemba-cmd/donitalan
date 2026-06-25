@@ -22,17 +22,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark user phone/email as verified
-    if (phone) {
-      const user = await prisma.user.findFirst({ where: { phone } })
-      if (user) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            phoneVerified: true,
-            status: 'ACTIVE',
-          },
-        })
+    try {
+      if (phone) {
+        const user = await prisma.user.findFirst({ where: { phone } })
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              phoneVerified: true,
+              status: 'ACTIVE',
+            },
+          })
+        }
       }
+    } catch (e) {
+      console.warn('Database unreachable, skipping user verification update')
     }
 
     return NextResponse.json({ success: true, message: result.message })

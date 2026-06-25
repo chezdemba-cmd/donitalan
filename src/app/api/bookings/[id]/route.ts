@@ -6,11 +6,12 @@ import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         truck: {
           include: {
@@ -59,9 +60,10 @@ const actionSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userId = request.headers.get('x-user-id')
     if (!userId) return NextResponse.json({ success: false, error: 'Non authentifié' }, { status: 401 })
 
@@ -69,7 +71,7 @@ export async function POST(
     const { action, paymentMethod, paymentPhone, otp, reason } = actionSchema.parse(body)
 
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         truck: { include: { owner: { include: { user: true } } } },
         client: { include: { user: true } },
@@ -90,7 +92,7 @@ export async function POST(
         }
 
         const updated = await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'AWAITING_PAYMENT',
             statusHistory: { create: { status: 'AWAITING_PAYMENT', changedBy: userId, note: 'Demande acceptée par le propriétaire' } },
@@ -117,7 +119,7 @@ export async function POST(
       // ---- OWNER: Refuse booking ----
       case 'refuse': {
         const updated = await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'CANCELLED_BY_OWNER',
             cancelReason: reason,
@@ -181,7 +183,7 @@ export async function POST(
         })
 
         await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'PAYMENT_SECURED',
             startOtp,
@@ -229,7 +231,7 @@ export async function POST(
         })
 
         await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'IN_PROGRESS',
             startOtpUsed: true,
@@ -262,7 +264,7 @@ export async function POST(
         }
 
         await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'COMPLETED_PENDING_VALIDATION',
             endOtpUsed: true,
@@ -317,7 +319,7 @@ export async function POST(
         }
 
         await prisma.booking.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'COMPLETED',
             statusHistory: {
@@ -345,7 +347,7 @@ export async function POST(
 
         await prisma.$transaction([
           prisma.booking.update({
-            where: { id: params.id },
+            where: { id },
             data: {
               status: 'DISPUTED',
               statusHistory: { create: { status: 'DISPUTED', changedBy: userId, note: reason } },

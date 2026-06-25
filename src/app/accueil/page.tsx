@@ -1,10 +1,13 @@
 import { TopNavbar } from '@/components/shared/Navigation'
 import { HomeContent } from '@/components/client/HomeContent'
+import { getUserSession } from '@/lib/session'
 
-export default function AccueilPage() {
+export default async function AccueilPage() {
+  const user = await getUserSession()
+
   return (
     <>
-      <TopNavbar />
+      <TopNavbar user={user || undefined} />
       <HomeContent />
     </>
   )

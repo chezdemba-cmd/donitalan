@@ -3,8 +3,9 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
 import { Loader2 } from 'lucide-react'
+import { motion, HTMLMotionProps } from 'framer-motion'
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
   variant?: 'primary' | 'accent' | 'outline' | 'ghost' | 'danger' | 'success'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
@@ -44,18 +45,22 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'btn-lg',
     }
 
+    const isDisabled = loading || disabled
+
     return (
-      <button
+      <motion.button
         ref={ref}
+        whileHover={isDisabled ? {} : { scale: 1.02 }}
+        whileTap={isDisabled ? {} : { scale: 0.98 }}
         className={cn(
           'btn',
           variantClasses[variant],
           sizeClasses[size],
           block && 'btn-block',
-          (loading || disabled) && 'opacity-60 cursor-not-allowed',
+          isDisabled && 'opacity-60 cursor-not-allowed',
           className
         )}
-        disabled={loading || disabled}
+        disabled={isDisabled}
         {...props}
       >
         {loading ? (
@@ -63,9 +68,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ) : leftIcon ? (
           leftIcon
         ) : null}
-        {children}
+        <>{children}</>
         {!loading && rightIcon}
-      </button>
+      </motion.button>
     )
   }
 )

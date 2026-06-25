@@ -4,11 +4,12 @@ import { z } from 'zod'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const truck = await prisma.truck.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         city: { include: { country: true } },
         owner: {
@@ -60,16 +61,17 @@ const updateTruckSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const userId = request.headers.get('x-user-id')
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Non authentifié' }, { status: 401 })
     }
 
     const truck = await prisma.truck.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { owner: true },
     })
 
@@ -85,7 +87,7 @@ export async function PATCH(
     const data = updateTruckSchema.parse(body)
 
     const updated = await prisma.truck.update({
-      where: { id: params.id },
+      where: { id },
       data,
     })
 

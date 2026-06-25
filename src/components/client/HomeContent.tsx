@@ -3,6 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Truck, MapPin, Calendar, Shield, Star, CheckCircle,
   ArrowRight, Phone, Package, Building, Clock,
@@ -14,13 +15,13 @@ import { BottomNav } from '@/components/shared/Navigation'
 import { TRUCK_TYPE_LABELS, type TruckType } from '@/types'
 import { formatPrice } from '@/lib/utils'
 
-const truckTypes: { type: TruckType; emoji: string; price: number; desc: string }[] = [
-  { type: 'PICKUP', emoji: '🚙', price: 15000, desc: 'Petits déménagements' },
-  { type: 'CARGO_VAN', emoji: '🚐', price: 25000, desc: 'Mobilier, cartons' },
-  { type: 'TARPAULIN', emoji: '🚛', price: 45000, desc: 'Grandes charges' },
-  { type: 'TIPPER', emoji: '🪣', price: 55000, desc: 'Matériaux BTP' },
-  { type: 'REFRIGERATED', emoji: '❄️', price: 75000, desc: 'Produits frais' },
-  { type: 'FLATBED', emoji: '🚚', price: 40000, desc: 'Équipements lourds' },
+const truckTypes: { type: TruckType; image: string; price: number; desc: string }[] = [
+  { type: 'PICKUP', image: '/images/trucks/pickup.png', price: 15000, desc: 'Petits déménagements' },
+  { type: 'CARGO_VAN', image: '/images/trucks/cargo_van.png', price: 25000, desc: 'Mobilier, cartons' },
+  { type: 'TARPAULIN', image: '/images/trucks/tarpaulin.png', price: 45000, desc: 'Grandes charges' },
+  { type: 'TIPPER', image: '/images/trucks/tipper.png', price: 55000, desc: 'Matériaux BTP' },
+  { type: 'REFRIGERATED', image: '/images/trucks/refrigerated.png', price: 75000, desc: 'Produits frais' },
+  { type: 'FLATBED', image: '/images/trucks/flatbed.png', price: 40000, desc: 'Équipements lourds' },
 ]
 
 const services = [
@@ -202,8 +203,10 @@ export function HomeContent() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {truckTypes.map(truck => (
               <Link key={truck.type} href={`/camions?type=${truck.type}`}>
-                <Card interactive className="text-center p-4">
-                  <div className="text-4xl mb-2">{truck.emoji}</div>
+                <Card interactive className="text-center p-4 flex flex-col items-center">
+                  <div className="relative w-24 h-16 mb-2">
+                    <Image src={truck.image} alt={TRUCK_TYPE_LABELS[truck.type]} fill className="object-contain" />
+                  </div>
                   <div className="font-semibold text-text text-sm">{TRUCK_TYPE_LABELS[truck.type]}</div>
                   <div className="text-xs text-muted mt-0.5">{truck.desc}</div>
                   <div className="mt-2 text-accent font-bold text-xs">

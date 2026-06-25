@@ -133,7 +133,7 @@ function UserMenu({ user }: { user: { firstName: string; lastName: string; role:
       case 'SUPER_ADMIN': return '/admin'
       case 'TRUCK_OWNER': return '/proprietaire'
       case 'DRIVER': return '/chauffeur'
-      default: return '/client'
+      default: return '/reservations'
     }
   }
 
@@ -159,7 +159,7 @@ function UserMenu({ user }: { user: { firstName: string; lastName: string; role:
               <p className="text-xs text-muted capitalize">{user.role.toLowerCase().replace('_', ' ')}</p>
             </div>
             <MenuLink href={getDashboardLink()} icon={BarChart3} label="Mon tableau de bord" onClick={() => setOpen(false)} />
-            <MenuLink href="/profil" icon={User} label="Mon profil" onClick={() => setOpen(false)} />
+            <MenuLink href="/accueil" icon={User} label="Mon profil" onClick={() => setOpen(false)} />
             <MenuLink href="/notifications" icon={Bell} label="Notifications" onClick={() => setOpen(false)} />
             {(user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') && (
               <MenuLink href="/admin" icon={Shield} label="Administration" onClick={() => setOpen(false)} />
@@ -203,14 +203,14 @@ const clientNavItems: NavItem[] = [
   { label: 'Accueil', href: '/accueil', icon: Home },
   { label: 'Chercher', href: '/camions', icon: Search },
   { label: 'Réservations', href: '/reservations', icon: Calendar },
-  { label: 'Profil', href: '/profil', icon: User },
+  { label: 'Profil', href: '/accueil', icon: User },
 ]
 
 const ownerNavItems: NavItem[] = [
   { label: 'Tableau', href: '/proprietaire', icon: BarChart3 },
   { label: 'Camions', href: '/proprietaire/camions', icon: Truck },
   { label: 'Demandes', href: '/proprietaire/demandes', icon: Calendar },
-  { label: 'Profil', href: '/profil', icon: User },
+  { label: 'Profil', href: '/accueil', icon: User },
 ]
 
 const adminNavItems: NavItem[] = [

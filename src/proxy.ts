@@ -22,7 +22,7 @@ const ADMIN_ONLY_ROUTES = ['/admin']
 // Routes propriétaire uniquement
 const OWNER_ONLY_ROUTES = ['/proprietaire']
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('donitalan-token')?.value
 
