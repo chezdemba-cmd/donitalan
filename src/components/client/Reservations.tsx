@@ -10,44 +10,19 @@ import { formatPrice, formatDate, getBookingStatusColor } from '@/lib/utils'
 import { BOOKING_STATUS_LABELS } from '@/types'
 import type { BookingStatus } from '@/types'
 
-const demoBookings = [
-  {
-    id: 'b1', bookingNumber: 'DT2406ABC',
-    truck: { brand: 'Mercedes', model: 'Actros', truckType: 'TARPAULIN' },
-    serviceType: 'MOVING_RESIDENTIAL',
-    status: 'IN_PROGRESS' as BookingStatus,
-    departureAddress: 'Badalabougou, Bamako',
-    arrivalAddress: 'ACI 2000, Bamako',
-    scheduledAt: new Date().toISOString(),
-    totalPrice: 75000,
-    currency: 'XOF',
-    startOtp: '482951',
-  },
-  {
-    id: 'b2', bookingNumber: 'DT2406DEF',
-    truck: { brand: 'Toyota', model: 'Hilux', truckType: 'PICKUP' },
-    serviceType: 'CARGO_TRANSPORT',
-    status: 'PAYMENT_SECURED' as BookingStatus,
-    departureAddress: 'Lafiabougou, Bamako',
-    arrivalAddress: 'Kalaban-Coro',
-    scheduledAt: new Date(Date.now() + 24 * 3600000).toISOString(),
-    totalPrice: 35000,
-    currency: 'XOF',
-    startOtp: '739102',
-  },
-  {
-    id: 'b3', bookingNumber: 'DT2406GHI',
-    truck: { brand: 'Volvo', model: 'FH 540', truckType: 'SEMI_TRAILER' },
-    serviceType: 'CARGO_TRANSPORT',
-    status: 'COMPLETED' as BookingStatus,
-    departureAddress: 'Bamako Centre',
-    arrivalAddress: 'Ségou',
-    scheduledAt: new Date(Date.now() - 2 * 24 * 3600000).toISOString(),
-    totalPrice: 180000,
-    currency: 'XOF',
-    startOtp: null,
-  },
-]
+export interface ClientBookingData {
+  id: string
+  bookingNumber: string
+  truck: { brand: string, model: string, truckType: string }
+  serviceType: string
+  status: BookingStatus
+  departureAddress: string
+  arrivalAddress: string
+  scheduledAt: string
+  totalPrice: number
+  currency: string
+  startOtp: string | null
+}
 
 const statusIcons: Partial<Record<BookingStatus, React.ReactNode>> = {
   IN_PROGRESS: <Clock className="w-4 h-4 text-accent" />,
@@ -56,10 +31,10 @@ const statusIcons: Partial<Record<BookingStatus, React.ReactNode>> = {
   DISPUTED: <AlertTriangle className="w-4 h-4 text-danger" />,
 }
 
-export function ReservationsContent() {
+export function ReservationsContent({ initialBookings }: { initialBookings: ClientBookingData[] }) {
   const [filter, setFilter] = React.useState<'all' | 'active' | 'past'>('all')
 
-  const filtered = demoBookings.filter(b => {
+  const filtered = initialBookings.filter(b => {
     if (filter === 'active') return ['PENDING_OWNER_ACCEPTANCE', 'ACCEPTED', 'AWAITING_PAYMENT', 'PAYMENT_SECURED', 'DRIVER_ASSIGNED', 'IN_PROGRESS', 'COMPLETED_PENDING_VALIDATION'].includes(b.status)
     if (filter === 'past') return ['COMPLETED', 'CANCELLED_BY_CLIENT', 'CANCELLED_BY_OWNER', 'REFUNDED', 'CLOSED'].includes(b.status)
     return true
@@ -121,7 +96,7 @@ export function ReservationsContent() {
   )
 }
 
-function BookingCard({ booking }: { booking: typeof demoBookings[0] }) {
+function BookingCard({ booking }: { booking: ClientBookingData }) {
   const [showOtp, setShowOtp] = React.useState(false)
   const isActive = ['IN_PROGRESS', 'PAYMENT_SECURED', 'DRIVER_ASSIGNED'].includes(booking.status)
   const isPendingValidation = booking.status === 'COMPLETED_PENDING_VALIDATION'
