@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useTransition } from 'react'
 import { Card, Badge } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Truck, Search, Filter, Eye, CheckCircle, XCircle } from 'lucide-react'
 import { formatPrice, formatRelativeTime, getTruckStatusColor } from '@/lib/utils'
+import { validateTruck, rejectTruck } from '@/app/actions/admin'
 
 type TruckData = {
   id: string
@@ -21,7 +22,22 @@ type TruckData = {
 
 export function AdminTrucksClient({ initialTrucks }: { initialTrucks: TruckData[] }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('ALL') // ALL, PENDING_VALIDATION, VALIDATED, SUSPENDED
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [isPending, startTransition] = useTransition()
+
+  const handleValidate = (id: string) => {
+    if (!confirm('Voulez-vous vraiment valider ce camion ?')) return
+    startTransition(async () => {
+      await validateTruck(id)
+    })
+  }
+
+  const handleReject = (id: string) => {
+    if (!confirm('Voulez-vous vraiment refuser/suspendre ce camion ?')) return
+    startTransition(async () => {
+      await rejectTruck(id)
+    })
+  }
 
   const filteredTrucks = initialTrucks.filter(truck => {
     const matchesSearch = 
@@ -42,7 +58,6 @@ export function AdminTrucksClient({ initialTrucks }: { initialTrucks: TruckData[
           <Truck className="w-6 h-6 text-primary" />
           Gestion des Camions
         </h1>
-        {/* Placeholder for future add button */}
       </div>
 
       <Card>
@@ -90,7 +105,7 @@ export function AdminTrucksClient({ initialTrucks }: { initialTrucks: TruckData[
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredTrucks.map(truck => (
-                <tr key={truck.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={truck.id} className={`hover:bg-slate-50 transition-colors ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
                   <td className="py-4">
                     <div className="font-semibold text-text">{truck.brand} {truck.model}</div>
                     <div className="text-xs text-muted flex gap-2 mt-1">
@@ -114,16 +129,18 @@ export function AdminTrucksClient({ initialTrucks }: { initialTrucks: TruckData[
                       {truck.status === 'PENDING_VALIDATION' && (
                         <>
                           <button
-                            onClick={() => alert(`Server Action à coder: Valider camion ${truck.id}`)}
+                            onClick={() => handleValidate(truck.id)}
                             className="p-2 rounded-lg bg-success/10 hover:bg-success text-success hover:text-white transition-colors"
                             title="Valider"
+                            disabled={isPending}
                           >
                             <CheckCircle className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => alert(`Server Action à coder: Refuser camion ${truck.id}`)}
+                            onClick={() => handleReject(truck.id)}
                             className="p-2 rounded-lg bg-danger/10 hover:bg-danger text-danger hover:text-white transition-colors"
                             title="Refuser"
+                            disabled={isPending}
                           >
                             <XCircle className="w-4 h-4" />
                           </button>

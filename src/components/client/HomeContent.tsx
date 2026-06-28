@@ -408,10 +408,10 @@ export function HomeContent() {
             </div>
           </div>
           <div className="border-t border-slate-700 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-slate-400 text-sm">
-            <div>© 2024 DoniTalan. Tous droits réservés.</div>
+            <div>© 2026 DoniTalan. Tous droits réservés.</div>
             <div className="flex gap-4">
               <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>
-              <Link href="/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+              <Link href="/politique-confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
             </div>
           </div>
         </div>

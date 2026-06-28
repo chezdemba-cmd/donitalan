@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useTransition } from 'react'
 import { Card, Badge } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Users, Search, Filter, Eye, Shield, CheckCircle, XCircle } from 'lucide-react'
 import { formatRelativeTime } from '@/lib/utils'
+import { suspendUser, forceVerifyUser } from '@/app/actions/admin'
 
 type UserData = {
   id: string
@@ -20,6 +21,21 @@ type UserData = {
 export function AdminUsersClient({ initialUsers }: { initialUsers: UserData[] }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL') // ALL, CLIENT, TRUCK_OWNER, DRIVER, ADMIN
+  const [isPending, startTransition] = useTransition()
+
+  const handleSuspend = (id: string) => {
+    if (!confirm('Voulez-vous vraiment suspendre cet utilisateur ?')) return
+    startTransition(async () => {
+      await suspendUser(id)
+    })
+  }
+
+  const handleVerify = (id: string) => {
+    if (!confirm('Voulez-vous vraiment forcer la validation de ce compte ?')) return
+    startTransition(async () => {
+      await forceVerifyUser(id)
+    })
+  }
 
   const filteredUsers = initialUsers.filter(user => {
     const matchesSearch = 
@@ -107,7 +123,7 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserData[] })
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredUsers.map(user => (
-                <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={user.id} className={`hover:bg-slate-50 transition-colors ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
                   <td className="py-4">
                     <div className="font-semibold text-text">{user.fullName}</div>
                     <div className="text-xs text-muted font-mono mt-1">ID: {user.id.slice(-6)}</div>
@@ -136,18 +152,20 @@ export function AdminUsersClient({ initialUsers }: { initialUsers: UserData[] })
                       </button>
                       {user.status === 'PENDING_VERIFICATION' && (
                         <button
-                          onClick={() => alert(`Server Action à coder: Valider le compte de ${user.fullName}`)}
+                          onClick={() => handleVerify(user.id)}
                           className="p-2 rounded-lg bg-success/10 hover:bg-success text-success hover:text-white transition-colors"
                           title="Forcer la validation"
+                          disabled={isPending}
                         >
                           <CheckCircle className="w-4 h-4" />
                         </button>
                       )}
                       {user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.status === 'ACTIVE' && (
                         <button
-                          onClick={() => alert(`Server Action à coder: Suspendre le compte de ${user.fullName}`)}
+                          onClick={() => handleSuspend(user.id)}
                           className="p-2 rounded-lg bg-warning/10 hover:bg-warning text-warning hover:text-white transition-colors"
                           title="Suspendre"
+                          disabled={isPending}
                         >
                           <XCircle className="w-4 h-4" />
                         </button>
