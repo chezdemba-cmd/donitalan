@@ -1,31 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initiatePayment, PaymentOperator } from '@/lib/payment'
 import { getUserSession } from '@/lib/session'
+import prisma from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserSession();
     const body = await request.json();
     
-    const { amount, method, truckId, phone } = body;
+    const { amount, method, bookingId, phone } = body;
 
-    if (!amount || !method || !truckId) {
+    if (!amount || !method || !bookingId) {
       return NextResponse.json(
         { success: false, error: 'Données manquantes' },
         { status: 400 }
       );
     }
 
-    // En l'absence de base de données PostgreSQL active (Mode MVP / Demo), 
-    // on génère un faux ID de réservation. En production, on créerait une entrée dans la table Booking.
-    const bookingId = `BK-${Date.now()}`;
+    // Verify booking and payment
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { payment: true }
+    });
+
+    if (!booking || !booking.payment) {
+      return NextResponse.json(
+        { success: false, error: 'Réservation ou paiement introuvable' },
+        { status: 404 }
+      );
+    }
+
+    if (booking.status !== 'AWAITING_PAYMENT') {
+      return NextResponse.json(
+        { success: false, error: 'Cette réservation n\'est pas en attente de paiement' },
+        { status: 400 }
+      );
+    }
     
     // Mapper la méthode envoyée depuis le frontend vers le PaymentOperator
-    // method peut être 'ORANGE_MONEY', 'WAVE', 'SIMULATED', etc.
     let operator: PaymentOperator = 'simulated';
     if (method === 'ORANGE_MONEY') operator = 'orange_money';
     else if (method === 'WAVE') operator = 'wave';
     else if (method === 'CARD_VISA' || method === 'CARD_MASTERCARD') operator = 'cinetpay';
+
+    if (method === 'SIMULATED') {
+      // Direct success simulation
+      await prisma.$transaction([
+        prisma.payment.update({
+          where: { id: booking.payment.id },
+          data: { status: 'SECURED', method: 'SIMULATED' }
+        }),
+        prisma.booking.update({
+          where: { id: bookingId },
+          data: { status: 'PAYMENT_SECURED' }
+        })
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        providerRef: 'SIMULATED_' + Date.now(),
+        redirectUrl: null,
+        message: 'Paiement simulé avec succès',
+        bookingId: booking.id
+      });
+    }
 
     const origin = request.headers.get('origin') || process.env.APP_URL || 'http://localhost:3000';
 
@@ -33,9 +71,9 @@ export async function POST(request: NextRequest) {
       amount,
       currency: process.env.CURRENCY_DEFAULT || 'XOF',
       phone,
-      description: `Paiement réservation ${bookingId} - Camion ${truckId}`,
-      bookingId,
-      returnUrl: `${origin}/paiement/retour?bookingId=${bookingId}`,
+      description: `Paiement réservation ${booking.bookingNumber}`,
+      bookingId: booking.id,
+      returnUrl: `${origin}/paiement/retour?bookingId=${booking.id}`,
       webhookUrl: `${process.env.APP_URL || origin}/api/webhooks/payment`,
     });
 
@@ -46,14 +84,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Le mode simulé retournera un succès immédiatement.
-    // Les vrais opérateurs retourneront une URL de redirection (`redirectUrl`).
+    // Update payment method with chosen one
+    await prisma.payment.update({
+      where: { id: booking.payment.id },
+      data: { method: method as any }
+    });
+
     return NextResponse.json({
       success: true,
       providerRef: paymentResult.providerRef,
       redirectUrl: paymentResult.redirectUrl || null,
       message: paymentResult.message,
-      bookingId
+      bookingId: booking.id
     });
 
   } catch (error) {

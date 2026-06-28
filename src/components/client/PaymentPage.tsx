@@ -21,7 +21,7 @@ export function PaymentPageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const amount = parseInt(searchParams.get('amount') || '50000')
-  const truckId = searchParams.get('truckId') || ''
+  const bookingId = searchParams.get('bookingId') || ''
 
   const [selectedMethod, setSelectedMethod] = React.useState('SIMULATED')
   const [phone, setPhone] = React.useState('')
@@ -41,6 +41,10 @@ export function PaymentPageContent() {
       toast.error('Entrez votre numéro de téléphone')
       return
     }
+    if (!bookingId) {
+      toast.error('Réservation introuvable')
+      return
+    }
 
     setStep('processing')
     setProcessing(true)
@@ -49,7 +53,7 @@ export function PaymentPageContent() {
       const response = await fetch('/api/payments/init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, method: selectedMethod, truckId, phone })
+        body: JSON.stringify({ amount, method: selectedMethod, bookingId, phone })
       });
       
       const data = await response.json();
