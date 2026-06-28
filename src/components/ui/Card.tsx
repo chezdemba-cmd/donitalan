@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -181,7 +182,22 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
-  if (!open) return null
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
+  if (!open || !mounted) return null
 
   const sizeClasses = {
     sm: 'max-w-sm',
@@ -190,29 +206,48 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     xl: 'max-w-2xl',
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" role="dialog">
-      <div className="overlay" onClick={onClose} />
-      <div className={cn(
-        'relative bg-white rounded-2xl sm:rounded-3xl shadow-lg w-full animate-slide-up z-10',
-        sizeClasses[size]
-      )}>
-        {title && (
-          <div className="flex items-center justify-between p-6 border-b border-slate-100">
-            <h2 className="text-lg font-bold text-text">{title}</h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl hover:bg-slate-100 text-muted transition-colors"
-              aria-label="Fermer"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-        <div className="p-6">{children}</div>
+  // Handle click outside
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[9999] bg-black/60 overflow-y-auto overscroll-y-contain animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={handleBackdropClick}
+    >
+      <div 
+        className="min-h-full flex items-center justify-center p-4 py-8 sm:p-6"
+        onMouseDown={handleBackdropClick}
+      >
+        <div className={cn(
+          'relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full animate-slide-up flex flex-col',
+          sizeClasses[size]
+        )}>
+          {title && (
+            <div className="sticky top-0 z-20 bg-white flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 rounded-t-2xl sm:rounded-t-3xl shadow-sm">
+              <h2 className="text-lg font-bold text-text">{title}</h2>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 -mr-2 rounded-xl hover:bg-slate-100 text-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+          <div className="p-5 sm:p-6 relative z-10">{children}</div>
+        </div>
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }
 
 // Rating Stars
