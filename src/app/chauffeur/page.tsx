@@ -13,18 +13,20 @@ export default async function ChauffeurPage() {
     redirect('/connexion')
   }
 
-  // Find owner profile
-  const owner = await prisma.truckOwner.findUnique({
+  // Find driver profile
+  const driver = await prisma.driver.findUnique({
     where: { userId: user.id }
   });
 
   let dbBooking = null;
 
-  if (owner) {
-    // Find an active booking for this owner's trucks
+  if (driver) {
+    // Find an active booking for this driver's owner's trucks
+    // In a real app, you would check if the booking is assigned to this driver specifically.
+    // For MVP, we show the active mission of the fleet.
     dbBooking = await prisma.booking.findFirst({
       where: {
-        truck: { ownerId: owner.id },
+        truck: { ownerId: driver.ownerId },
         status: {
           in: ['PAYMENT_SECURED', 'IN_PROGRESS', 'COMPLETED_PENDING_VALIDATION']
         }

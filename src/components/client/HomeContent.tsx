@@ -112,8 +112,8 @@ export function HomeContent() {
           <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full bg-white blur-3xl" />
         </div>
 
-        <div className="container-app relative z-10">
-          <div className="max-w-2xl">
+        <div className="container-app relative z-10 flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex-1 max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -138,9 +138,22 @@ export function HomeContent() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="glass-card p-5"
+              className="glass-card p-5 relative z-20"
             >
               <QuickSearchForm />
+            </motion.div>
+          </div>
+
+          <div className="hidden lg:flex flex-1 justify-center items-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="animate-float"
+            >
+              <div className="relative w-80 h-80 animate-pulse-slow">
+                <Image src="/logo.png" alt="DoniTalan Logo" fill className="object-contain drop-shadow-2xl" />
+              </div>
             </motion.div>
           </div>
         </div>

@@ -295,6 +295,38 @@ async function main() {
   console.log('✅ Trucks created')
 
   // ============================================================
+  // DRIVER (Demo)
+  // ============================================================
+  const driverPasswordHash = await bcrypt.hash('driver123!', 12)
+  const driverUser = await prisma.user.upsert({
+    where: { email: 'chauffeur@demo.ml' },
+    update: {},
+    create: {
+      email: 'chauffeur@demo.ml',
+      phone: '+22375000000',
+      firstName: 'Salif',
+      lastName: 'Keita',
+      passwordHash: driverPasswordHash,
+      role: 'DRIVER',
+      status: 'ACTIVE',
+      phoneVerified: true,
+      countryCode: 'ML',
+    },
+  })
+
+  await prisma.driver.upsert({
+    where: { userId: driverUser.id },
+    update: {},
+    create: {
+      userId: driverUser.id,
+      ownerId: createdOwners[0].id, // Assigned to the first owner
+      licenseNumber: 'PC-123456789',
+      verified: true,
+    },
+  })
+  console.log('✅ Demo driver created')
+
+  // ============================================================
   // CLIENT USERS (Demo)
   // ============================================================
   const clientPasswordHash = await bcrypt.hash('client123!', 12)
@@ -328,6 +360,7 @@ async function main() {
   console.log('\n📋 Comptes de démonstration:')
   console.log('   Admin:       admin@donitalan.com   / admin123!')
   console.log('   Propriétaire: moussa@demo.ml       / owner123!')
+  console.log('   Chauffeur:   chauffeur@demo.ml    / driver123!')
   console.log('   Client:      aminata@demo.ml       / client123!')
 }
 

@@ -35,10 +35,10 @@ export function TopNavbar({ user }: TopNavbarProps) {
   return (
     <nav className="bg-white border-b border-slate-100 sticky top-0 z-30">
       <div className="container-app">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/accueil" className="flex items-center gap-2 font-bold text-xl">
-            <img src="/logo.png" alt="DoniTalan Logo" className="h-10 w-auto object-contain" />
+            <img src="/logo.png" alt="DoniTalan Logo" className="h-14 w-auto object-contain" />
           </Link>
 
           {/* Desktop Nav Links */}
