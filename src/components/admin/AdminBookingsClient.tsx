@@ -3,8 +3,10 @@
 import React, { useState } from 'react'
 import { Card, Badge } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Calendar, Search, Filter, Eye, AlertTriangle } from 'lucide-react'
+import { Calendar, Search, Filter, Eye, AlertTriangle, CheckCircle } from 'lucide-react'
 import { formatPrice, formatRelativeTime, getBookingStatusColor } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 type BookingData = {
   id: string
@@ -13,28 +15,56 @@ type BookingData = {
   status: string
   clientName: string
   truckName: string
+  ownerName: string
   departureCity: string | null
   arrivalCity: string | null
   totalPrice: number
+  ownerAmount: number
+  platformFee: number
   scheduledAt: string
   createdAt: string
 }
 
 export function AdminBookingsClient({ initialBookings }: { initialBookings: BookingData[] }) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const filteredBookings = initialBookings.filter(booking => {
     const matchesSearch = 
       booking.bookingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.truckName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.ownerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (booking.departureCity && booking.departureCity.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesStatus = statusFilter === 'ALL' || booking.status === statusFilter
 
     return matchesSearch && matchesStatus
   })
+
+  const handleValidate = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir valider cette mission ? Cela déclenchera le paiement au propriétaire.')) return;
+    
+    setLoadingId(id)
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}/validate`, {
+        method: 'POST'
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Mission validée avec succès. Le paiement a été initié.')
+        router.refresh()
+      } else {
+        toast.error(data.error || 'Erreur lors de la validation')
+      }
+    } catch (e) {
+      toast.error('Erreur réseau')
+    } finally {
+      setLoadingId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -51,7 +81,7 @@ export function AdminBookingsClient({ initialBookings }: { initialBookings: Book
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <input 
               type="text" 
-              placeholder="Rechercher (N°, client, camion, ville...)" 
+              placeholder="Rechercher (N°, client, camion, propriétaire...)" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -60,7 +90,7 @@ export function AdminBookingsClient({ initialBookings }: { initialBookings: Book
           
           <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
             <Filter className="w-5 h-5 text-muted shrink-0" />
-            {['ALL', 'PENDING_OWNER_ACCEPTANCE', 'PAYMENT_SECURED', 'IN_PROGRESS', 'COMPLETED', 'DISPUTED'].map((status) => (
+            {['ALL', 'PAYMENT_SECURED', 'IN_PROGRESS', 'COMPLETED_PENDING_VALIDATION', 'COMPLETED', 'DISPUTED'].map((status) => (
               <button
                 key={status}
                 onClick={() => setStatusFilter(status)}
@@ -82,8 +112,8 @@ export function AdminBookingsClient({ initialBookings }: { initialBookings: Book
               <tr className="text-muted text-xs border-b border-slate-100 uppercase tracking-wider">
                 <th className="text-left py-3 font-semibold">N° Réservation</th>
                 <th className="text-left py-3 font-semibold">Trajet & Service</th>
-                <th className="text-left py-3 font-semibold hidden sm:table-cell">Client / Camion</th>
-                <th className="text-right py-3 font-semibold">Montant</th>
+                <th className="text-left py-3 font-semibold hidden sm:table-cell">Client / Propriétaire</th>
+                <th className="text-right py-3 font-semibold">Montant (Frais)</th>
                 <th className="text-center py-3 font-semibold">Statut</th>
                 <th className="text-right py-3 font-semibold">Actions</th>
               </tr>
@@ -97,19 +127,20 @@ export function AdminBookingsClient({ initialBookings }: { initialBookings: Book
                   </td>
                   <td className="py-4">
                     <div className="font-medium text-slate-800">
-                      {booking.departureCity || 'Départ'} → {booking.arrivalCity || 'Arrivée'}
+                      <span className="truncate max-w-[150px] inline-block">{booking.departureCity}</span> → <span className="truncate max-w-[150px] inline-block">{booking.arrivalCity}</span>
                     </div>
                     <div className="text-xs text-muted mt-1">{booking.serviceType.replace(/_/g, ' ')}</div>
                     <div className="text-xs text-primary mt-0.5">Prévu: {new Date(booking.scheduledAt).toLocaleDateString('fr-FR')}</div>
                   </td>
                   <td className="py-4 hidden sm:table-cell">
-                    <div className="font-medium">{booking.clientName}</div>
-                    <div className="text-xs text-muted mt-1 flex items-center gap-1">
-                      {booking.truckName}
-                    </div>
+                    <div className="font-medium">Client: {booking.clientName}</div>
+                    <div className="text-xs text-muted mt-1">Prop.: {booking.ownerName}</div>
+                    <div className="text-xs text-slate-400 mt-1">{booking.truckName}</div>
                   </td>
                   <td className="py-4 text-right">
-                    <div className="font-semibold">{formatPrice(booking.totalPrice)}</div>
+                    <div className="font-semibold text-text">{formatPrice(booking.totalPrice)}</div>
+                    <div className="text-xs text-success mt-1">Gains: {formatPrice(booking.ownerAmount)}</div>
+                    <div className="text-xs text-primary mt-0.5">Frais: {formatPrice(booking.platformFee)}</div>
                   </td>
                   <td className="py-4 text-center">
                     <span className={`badge text-[10px] uppercase tracking-wider ${getBookingStatusColor(booking.status)}`}>
@@ -121,6 +152,16 @@ export function AdminBookingsClient({ initialBookings }: { initialBookings: Book
                       <button className="p-2 rounded-lg hover:bg-slate-200 transition-colors" title="Voir les détails">
                         <Eye className="w-4 h-4 text-slate-600" />
                       </button>
+                      {booking.status === 'COMPLETED_PENDING_VALIDATION' && (
+                        <button
+                          onClick={() => handleValidate(booking.id)}
+                          disabled={loadingId === booking.id}
+                          className="p-2 rounded-lg bg-success/10 hover:bg-success text-success hover:text-white transition-colors disabled:opacity-50"
+                          title="Valider et payer le propriétaire"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </button>
+                      )}
                       {booking.status === 'DISPUTED' && (
                         <button
                           onClick={() => alert(`Server Action à coder: Gérer le litige pour ${booking.bookingNumber}`)}

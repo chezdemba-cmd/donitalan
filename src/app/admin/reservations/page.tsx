@@ -5,13 +5,16 @@ import { AdminBookingsClient } from '@/components/admin/AdminBookingsClient'
 export const dynamic = 'force-dynamic'
 
 export default async function AdminReservationsPage() {
-  // Fetch all bookings with clients and trucks
+  // Fetch all bookings with clients, trucks, owners and payments
   const bookingsDb = await prisma.booking.findMany({
     include: {
       client: {
         include: { user: true }
       },
-      truck: true
+      truck: {
+        include: { owner: { include: { user: true } } }
+      },
+      payment: true
     },
     orderBy: {
       createdAt: 'desc'
@@ -26,9 +29,12 @@ export default async function AdminReservationsPage() {
     status: b.status,
     clientName: b.client ? b.client.user.firstName + ' ' + b.client.user.lastName : 'Client supprimé',
     truckName: b.truck.brand + ' ' + b.truck.model,
-    departureCity: b.departureCity,
-    arrivalCity: b.arrivalCity,
+    ownerName: b.truck.owner.user.firstName + ' ' + b.truck.owner.user.lastName,
+    departureCity: b.departureCity || b.departureAddress,
+    arrivalCity: b.arrivalCity || b.arrivalAddress,
     totalPrice: Number(b.totalPrice),
+    ownerAmount: b.payment ? Number(b.payment.ownerAmount) : 0,
+    platformFee: b.payment ? Number(b.payment.platformFee) : 0,
     scheduledAt: b.scheduledAt.toISOString(),
     createdAt: b.createdAt.toISOString()
   }))
