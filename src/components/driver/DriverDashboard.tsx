@@ -2,67 +2,104 @@
 
 import React, { useState } from 'react'
 import { MapPin, Phone, CheckCircle, Clock, Navigation, AlertTriangle, ShieldCheck } from 'lucide-react'
-import { Card, Avatar, Badge } from '@/components/ui/Card'
+import { Card, Avatar, Badge, EmptyState } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { BottomNav } from '@/components/shared/Navigation'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 
-const activeMission = {
-  id: 'b1',
-  number: 'DT2406ABC',
-  clientName: 'Aminata Traoré',
-  clientPhone: '+22371000001',
-  status: 'PAYMENT_SECURED', // Can be PAYMENT_SECURED, IN_PROGRESS
-  departure: 'Badalabougou, Bamako',
-  arrival: 'ACI 2000, Bamako',
-  truckInfo: 'Mercedes Actros (BK-2019-A)',
-  scheduledAt: new Date(Date.now() + 30 * 60000).toISOString(),
+export interface DriverMissionData {
+  id: string
+  number: string
+  clientName: string
+  clientPhone: string
+  status: string
+  departure: string
+  arrival: string
+  truckInfo: string
+  scheduledAt: string
 }
 
-export function DriverDashboardContent() {
+export function DriverDashboardContent({ activeMission: initialMission }: { activeMission: DriverMissionData | null }) {
+  const router = useRouter()
+  const [activeMission, setActiveMission] = useState<DriverMissionData | null>(initialMission)
   const [otp, setOtp] = useState('')
-  const [missionStatus, setMissionStatus] = useState(activeMission.status)
   const [loading, setLoading] = useState(false)
 
-  const handleStartMission = () => {
+  if (!activeMission) {
+    return (
+      <main className="min-h-screen bg-slate-50 pb-24 md:pb-8">
+        <div className="bg-primary text-white py-6">
+          <div className="container-app">
+            <h1 className="text-xl font-bold">Bonjour</h1>
+            <p className="text-blue-200 text-sm">Chauffeur</p>
+          </div>
+        </div>
+        <div className="container-app py-6 space-y-6">
+          <EmptyState 
+            title="Aucune mission active" 
+            description="Vous n'avez pas de mission en cours ou en attente pour le moment." 
+            icon={<CheckCircle />} 
+          />
+        </div>
+        <BottomNav role="DRIVER" />
+      </main>
+    )
+  }
+
+  const handleStartMission = async () => {
     if (otp.length < 4) {
       toast.error('Veuillez entrer le code OTP donné par le client')
       return
     }
     
     setLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      if (otp === '482951' || otp === '1234') { // Demo codes
-        setMissionStatus('IN_PROGRESS')
+    try {
+      const res = await fetch(`/api/bookings/${activeMission.id}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp })
+      })
+      const data = await res.json()
+      if (data.success) {
         toast.success('Mission démarrée avec succès !')
+        setActiveMission({ ...activeMission, status: 'IN_PROGRESS' })
         setOtp('')
+        router.refresh()
       } else {
-        toast.error('Code OTP incorrect')
+        toast.error(data.error || 'Code OTP incorrect')
       }
+    } catch (err) {
+      toast.error('Erreur de connexion')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
-  const handleEndMission = () => {
-    if (otp.length < 4) {
-      toast.error('Veuillez entrer le code OTP de fin donné par le client')
-      return
-    }
-    
+  const handleEndMission = async () => {
     setLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      if (otp === '9988' || otp === '1234') { // Demo codes
-        setMissionStatus('COMPLETED_PENDING_VALIDATION')
-        toast.success('Mission terminée ! En attente de validation du propriétaire.')
+    try {
+      const res = await fetch(`/api/bookings/${activeMission.id}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Mission terminée !')
+        setActiveMission({ ...activeMission, status: 'COMPLETED_PENDING_VALIDATION' })
         setOtp('')
+        router.refresh()
       } else {
-        toast.error('Code OTP incorrect')
+        toast.error(data.error || 'Erreur lors de la fin de mission')
       }
+    } catch (err) {
+      toast.error('Erreur de connexion')
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
+
+  const missionStatus = activeMission.status
 
   return (
     <main className="min-h-screen bg-slate-50 pb-24 md:pb-8">
@@ -70,9 +107,9 @@ export function DriverDashboardContent() {
       <div className="bg-primary text-white py-6">
         <div className="container-app">
           <div className="flex items-center gap-4">
-            <Avatar name="Ousmane Diallo" size="lg" className="bg-success" />
+            <Avatar name="Chauffeur" size="lg" className="bg-success" />
             <div>
-              <h1 className="text-xl font-bold">Bonjour, Ousmane</h1>
+              <h1 className="text-xl font-bold">Mission en cours</h1>
               <p className="text-blue-200 text-sm">Chauffeur · {activeMission.truckInfo}</p>
             </div>
           </div>
@@ -81,14 +118,14 @@ export function DriverDashboardContent() {
 
       <div className="container-app py-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text">Mission active</h2>
+          <h2 className="text-lg font-bold text-text">Détails de la mission</h2>
           <Badge variant={missionStatus === 'IN_PROGRESS' ? 'success' : 'warning'}>
             {missionStatus === 'IN_PROGRESS' ? 'En cours' : 
              missionStatus === 'COMPLETED_PENDING_VALIDATION' ? 'Terminée' : 'À démarrer'}
           </Badge>
         </div>
 
-        {missionStatus === 'COMPLETED_PENDING_VALIDATION' ? (
+        {missionStatus === 'COMPLETED_PENDING_VALIDATION' || missionStatus === 'COMPLETED' ? (
           <Card className="text-center py-12">
             <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
             <h3 className="text-xl font-bold text-text mb-2">Excellent travail !</h3>
@@ -129,24 +166,26 @@ export function DriverDashboardContent() {
               <p className="text-sm text-muted mb-4">
                 {missionStatus === 'PAYMENT_SECURED' 
                   ? 'Demandez au client son code OTP pour démarrer la mission.'
-                  : 'Demandez au client son code OTP de fin pour terminer la mission.'}
+                  : 'Vous êtes arrivé ? Terminez la mission ici.'}
               </p>
               
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Code OTP"
-                  className="input-base text-center font-mono text-xl tracking-widest flex-1"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                />
+                {missionStatus === 'PAYMENT_SECURED' && (
+                  <input
+                    type="text"
+                    placeholder="Code OTP"
+                    className="input-base text-center font-mono text-xl tracking-widest flex-1"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                )}
                 <Button 
                   variant={missionStatus === 'PAYMENT_SECURED' ? 'primary' : 'success'}
                   onClick={missionStatus === 'PAYMENT_SECURED' ? handleStartMission : handleEndMission}
-                  disabled={loading || otp.length < 4}
-                  className="w-32"
+                  disabled={loading || (missionStatus === 'PAYMENT_SECURED' && otp.length < 4)}
+                  className={missionStatus === 'PAYMENT_SECURED' ? "w-32" : "w-full"}
                 >
-                  {loading ? '...' : 'Valider'}
+                  {loading ? '...' : (missionStatus === 'PAYMENT_SECURED' ? 'Valider' : 'Terminer la mission')}
                 </Button>
               </div>
             </div>
