@@ -12,62 +12,42 @@ import { Button } from '@/components/ui/Button'
 import { BottomNav } from '@/components/shared/Navigation'
 import { formatPrice, formatDate, getBookingStatusColor } from '@/lib/utils'
 import { BOOKING_STATUS_LABELS } from '@/types'
-import type { BookingStatus } from '@/types'
 
-const ownerStats = [
-  { label: 'Revenus ce mois', value: formatPrice(850000), icon: <DollarSign className="w-5 h-5" />, trend: { value: 18, label: 'vs mois dernier' }, color: 'text-success' },
-  { label: 'Missions réalisées', value: '23', icon: <Package className="w-5 h-5" />, trend: { value: 5, label: 'ce mois' }, color: 'text-primary' },
-  { label: 'Note moyenne', value: '4.8 ★', icon: <Star className="w-5 h-5" />, color: 'text-warning' },
-  { label: 'Camions actifs', value: '2', icon: <Truck className="w-5 h-5" />, color: 'text-accent' },
-]
+type OwnerData = {
+  id: string
+  firstName: string
+  lastName: string
+  stats: {
+    thisMonthRevenue: number
+    totalRevenue: number
+    missionsThisMonth: number
+    avgRating: string | number
+    activeTrucks: number
+  }
+  trucks: any[]
+  bookings: any[]
+  payouts: any[]
+}
 
-const myTrucks = [
-  {
-    id: 'truck-1', brand: 'Mercedes', model: 'Actros', year: 2019,
-    truckType: 'TARPAULIN', status: 'VALIDATED',
-    averageRating: 4.8, totalTrips: 87,
-    basePrice: 45000,
-  },
-  {
-    id: 'truck-2', brand: 'Toyota', model: 'Hilux', year: 2021,
-    truckType: 'PICKUP', status: 'PENDING_VALIDATION',
-    averageRating: 0, totalTrips: 0,
-    basePrice: 15000,
-  },
-]
-
-const pendingRequests = [
-  {
-    id: 'b1', number: 'DT2406ABC',
-    client: 'Aminata Traoré', phone: '+22376000001',
-    departure: 'Badalabougou', arrival: 'ACI 2000',
-    scheduledAt: new Date(Date.now() + 2 * 3600000).toISOString(),
-    amount: 75000, status: 'PENDING_OWNER_ACCEPTANCE' as BookingStatus,
-  },
-  {
-    id: 'b2', number: 'DT2406DEF',
-    client: 'Ibrahim Koné', phone: '+22377000002',
-    departure: 'Lafiabougou', arrival: 'Kalaban-Coro',
-    scheduledAt: new Date(Date.now() + 24 * 3600000).toISOString(),
-    amount: 35000, status: 'PENDING_OWNER_ACCEPTANCE' as BookingStatus,
-  },
-]
-
-const recentMissions = [
-  { id: 'b3', number: 'DT2406GHI', client: 'Kadiatou Sanogo', amount: 65000, status: 'IN_PROGRESS' as BookingStatus, date: new Date().toISOString() },
-  { id: 'b4', number: 'DT2406JKL', client: 'Oumar Bah', amount: 45000, status: 'COMPLETED' as BookingStatus, date: new Date(Date.now() - 24 * 3600000).toISOString() },
-  { id: 'b5', number: 'DT2406MNO', client: 'Mariam Diarra', amount: 30000, status: 'COMPLETED' as BookingStatus, date: new Date(Date.now() - 48 * 3600000).toISOString() },
-]
-
-export function OwnerDashboardContent() {
+export function OwnerDashboardContent({ initialData }: { initialData: OwnerData }) {
   const [activeTab, setActiveTab] = React.useState<'demandes' | 'camions' | 'missions' | 'revenus'>('demandes')
 
+  const pendingRequests = initialData.bookings.filter(b => b.status === 'PENDING_OWNER_ACCEPTANCE')
+  const recentMissions = initialData.bookings.filter(b => b.status !== 'PENDING_OWNER_ACCEPTANCE')
+
+  const ownerStats = [
+    { label: 'Revenus ce mois', value: formatPrice(initialData.stats.thisMonthRevenue), icon: <DollarSign className="w-5 h-5" />, color: 'text-success' },
+    { label: 'Missions du mois', value: initialData.stats.missionsThisMonth.toString(), icon: <Package className="w-5 h-5" />, color: 'text-primary' },
+    { label: 'Note moyenne', value: `${initialData.stats.avgRating} ★`, icon: <Star className="w-5 h-5" />, color: 'text-warning' },
+    { label: 'Camions actifs', value: initialData.stats.activeTrucks.toString(), icon: <Truck className="w-5 h-5" />, color: 'text-accent' },
+  ]
+
   const handleAccept = (bookingId: string) => {
-    alert(`✅ Demande ${bookingId} acceptée ! Le client sera notifié.`)
+    alert(`✅ Server Action à coder: Accepter la demande ${bookingId}`)
   }
 
   const handleRefuse = (bookingId: string) => {
-    alert(`❌ Demande ${bookingId} refusée.`)
+    alert(`❌ Server Action à coder: Refuser la demande ${bookingId}`)
   }
 
   return (
@@ -77,19 +57,15 @@ export function OwnerDashboardContent() {
         <div className="container-app">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Avatar name="Moussa Diarra" size="lg" className="bg-accent" />
+              <Avatar name={`${initialData.firstName} ${initialData.lastName}`} size="lg" className="bg-accent" />
               <div>
-                <h1 className="text-xl font-bold">Bonjour, Moussa 👋</h1>
-                <p className="text-blue-200 text-sm">Propriétaire certifié · Bamako</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-warning text-sm">★ 4.8</span>
-                  <span className="text-blue-200 text-xs">· 87 missions</span>
-                </div>
+                <h1 className="text-xl font-bold">Bonjour, {initialData.firstName} 👋</h1>
+                <p className="text-blue-200 text-sm">Propriétaire de camions</p>
               </div>
             </div>
             <Link href="/proprietaire/ajouter-camion">
               <Button variant="accent" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-                Ajouter camion
+                Nouveau
               </Button>
             </Link>
           </div>
@@ -105,7 +81,7 @@ export function OwnerDashboardContent() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-white rounded-2xl p-1 shadow-sm border border-slate-100">
+        <div className="flex gap-1 bg-white rounded-2xl p-1 shadow-sm border border-slate-100 overflow-x-auto hide-scrollbar">
           {[
             { key: 'demandes', label: `Demandes (${pendingRequests.length})` },
             { key: 'camions', label: 'Mes camions' },
@@ -115,7 +91,7 @@ export function OwnerDashboardContent() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
                 activeTab === tab.key
                   ? 'bg-primary text-white shadow-sm'
                   : 'text-muted hover:text-text'
@@ -165,11 +141,13 @@ export function OwnerDashboardContent() {
                     >
                       Refuser
                     </Button>
-                    <a href={`tel:${req.phone}`}>
-                      <Button variant="outline" size="sm" leftIcon={<Phone className="w-4 h-4" />} block>
-                        Appeler
-                      </Button>
-                    </a>
+                    {req.phone && (
+                      <a href={`tel:${req.phone}`}>
+                        <Button variant="outline" size="sm" leftIcon={<Phone className="w-4 h-4" />} block>
+                          Appeler
+                        </Button>
+                      </a>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -180,7 +158,7 @@ export function OwnerDashboardContent() {
         {/* Tab: Mes camions */}
         {activeTab === 'camions' && (
           <div className="space-y-4 animate-fade-in">
-            {myTrucks.map(truck => (
+            {initialData.trucks.map(truck => (
               <Card key={truck.id} className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0">
                   🚛
@@ -224,17 +202,21 @@ export function OwnerDashboardContent() {
         {/* Tab: Missions récentes */}
         {activeTab === 'missions' && (
           <div className="space-y-3 animate-fade-in">
-            {recentMissions.map(mission => (
-              <Card key={mission.id} className="flex items-center justify-between gap-4">
+            {recentMissions.length === 0 ? (
+              <Card className="text-center py-12">
+                <p className="text-muted">Aucune mission pour le moment</p>
+              </Card>
+            ) : recentMissions.map(mission => (
+              <Card key={mission.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="font-semibold text-text">{mission.client}</div>
                   <div className="text-xs text-muted font-mono">{mission.number}</div>
-                  <div className="text-xs text-muted">{formatDate(mission.date)}</div>
+                  <div className="text-xs text-muted">{formatDate(mission.createdAt)}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-text">{formatPrice(mission.amount)}</span>
                   <span className={`badge text-xs ${getBookingStatusColor(mission.status)}`}>
-                    {BOOKING_STATUS_LABELS[mission.status]}
+                    {BOOKING_STATUS_LABELS[mission.status as keyof typeof BOOKING_STATUS_LABELS] || mission.status}
                   </span>
                 </div>
               </Card>
@@ -247,37 +229,37 @@ export function OwnerDashboardContent() {
           <div className="space-y-4 animate-fade-in">
             <div className="grid grid-cols-2 gap-4">
               <Card className="text-center">
-                <div className="text-3xl font-bold text-success">{formatPrice(850000)}</div>
+                <div className="text-3xl font-bold text-success">{formatPrice(initialData.stats.thisMonthRevenue)}</div>
                 <div className="text-muted text-sm mt-1">Ce mois</div>
               </Card>
               <Card className="text-center">
-                <div className="text-3xl font-bold text-primary">{formatPrice(4200000)}</div>
-                <div className="text-muted text-sm mt-1">Total 2024</div>
+                <div className="text-3xl font-bold text-primary">{formatPrice(initialData.stats.totalRevenue)}</div>
+                <div className="text-muted text-sm mt-1">Total</div>
               </Card>
             </div>
+            
             <Card>
-              <h3 className="font-bold text-text mb-4">Virements reçus</h3>
-              <div className="space-y-3">
-                {[
-                  { date: '20 juin 2024', amount: 280000, method: 'Orange Money', status: 'COMPLETED' },
-                  { date: '15 juin 2024', amount: 195000, method: 'Wave', status: 'COMPLETED' },
-                  { date: '10 juin 2024', amount: 375000, method: 'Orange Money', status: 'COMPLETED' },
-                ].map((payout, i) => (
-                  <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
-                    <div>
-                      <div className="font-medium text-text">{payout.method}</div>
-                      <div className="text-xs text-muted">{payout.date}</div>
+              <h3 className="font-bold text-text mb-4">Historique des versements</h3>
+              {initialData.payouts.length === 0 ? (
+                <div className="text-center text-muted py-6">Aucun versement reçu pour le moment</div>
+              ) : (
+                <div className="space-y-3">
+                  {initialData.payouts.map((payout, i) => (
+                    <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                      <div>
+                        <div className="font-medium text-text">{payout.method}</div>
+                        <div className="text-xs text-muted">{formatDate(payout.createdAt)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-success">+{formatPrice(payout.amount)}</div>
+                        <Badge variant={payout.status === 'COMPLETED' ? 'success' : 'warning'} className="text-xs">
+                          {payout.status === 'COMPLETED' ? 'Versé' : 'En attente'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-success">+{formatPrice(payout.amount)}</div>
-                      <Badge variant="success" className="text-xs">Reçu</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 p-3 bg-blue-50 rounded-xl text-center text-xs text-primary font-medium">
-                💳 Prochain virement estimé : {formatPrice(285000)} · dans 3 jours
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
         )}
