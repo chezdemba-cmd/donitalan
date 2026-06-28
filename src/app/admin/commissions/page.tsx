@@ -1,19 +1,22 @@
 import React from 'react'
-import { Card } from '@/components/ui/Card'
-import { TrendingUp } from 'lucide-react'
+import prisma from '@/lib/prisma'
+import { AdminCommissionsClient } from '@/components/admin/AdminCommissionsClient'
 
-export default function AdminCommissionsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <TrendingUp className="w-6 h-6 text-primary" />
-          Commissions
-        </h1>
-      </div>
-      <Card>
-        <p className="text-muted text-center py-10">Interface d'analyse des revenus et commissions de la plateforme à venir.</p>
-      </Card>
-    </div>
-  )
+export const dynamic = 'force-dynamic'
+
+export default async function AdminCommissionsPage() {
+  const commissionsDb = await prisma.commission.findMany({
+    orderBy: { createdAt: 'desc' }
+  })
+
+  const commissionsData = commissionsDb.map(c => ({
+    id: c.id,
+    name: c.name,
+    percent: Number(c.percent),
+    serviceType: c.serviceType,
+    active: c.active,
+    createdAt: c.createdAt.toISOString()
+  }))
+
+  return <AdminCommissionsClient initialCommissions={commissionsData} />
 }

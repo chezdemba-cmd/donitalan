@@ -1,19 +1,37 @@
 import React from 'react'
-import { Card } from '@/components/ui/Card'
-import { Calendar } from 'lucide-react'
+import prisma from '@/lib/prisma'
+import { AdminBookingsClient } from '@/components/admin/AdminBookingsClient'
 
-export default function AdminBookingsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <Calendar className="w-6 h-6 text-primary" />
-          Réservations
-        </h1>
-      </div>
-      <Card>
-        <p className="text-muted text-center py-10">Interface de suivi des réservations et des statuts à venir.</p>
-      </Card>
-    </div>
-  )
+export const dynamic = 'force-dynamic'
+
+export default async function AdminReservationsPage() {
+  // Fetch all bookings with clients and trucks
+  const bookingsDb = await prisma.booking.findMany({
+    include: {
+      client: {
+        include: { user: true }
+      },
+      truck: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Format data for the client component
+  const bookingsData = bookingsDb.map(b => ({
+    id: b.id,
+    bookingNumber: b.bookingNumber,
+    serviceType: b.serviceType,
+    status: b.status,
+    clientName: b.client ? b.client.user.firstName + ' ' + b.client.user.lastName : 'Client supprimé',
+    truckName: b.truck.brand + ' ' + b.truck.model,
+    departureCity: b.departureCity,
+    arrivalCity: b.arrivalCity,
+    totalPrice: Number(b.totalPrice),
+    scheduledAt: b.scheduledAt.toISOString(),
+    createdAt: b.createdAt.toISOString()
+  }))
+
+  return <AdminBookingsClient initialBookings={bookingsData} />
 }

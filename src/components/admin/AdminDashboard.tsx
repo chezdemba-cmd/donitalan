@@ -5,57 +5,59 @@ import Link from 'next/link'
 import {
   BarChart3, Truck, Users, Calendar, AlertTriangle, TrendingUp,
   CheckCircle, XCircle, Clock, Eye, Settings, Shield,
-  DollarSign, FileText, Bell
+  DollarSign
 } from 'lucide-react'
-import { Card, StatCard, Badge, Avatar } from '@/components/ui/Card'
+import { Card, StatCard, Badge } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { formatPrice, formatRelativeTime, getBookingStatusColor, getTruckStatusColor } from '@/lib/utils'
+import { formatPrice, formatRelativeTime, getBookingStatusColor } from '@/lib/utils'
 
-// Demo data for admin dashboard
-const stats = [
-  { label: 'Camions actifs', value: '48', icon: <Truck className="w-5 h-5" />, trend: { value: 12, label: 'ce mois' }, color: 'text-primary' },
-  { label: 'Réservations actives', value: '23', icon: <Calendar className="w-5 h-5" />, trend: { value: 8, label: 'ce mois' }, color: 'text-accent' },
-  { label: 'Utilisateurs total', value: '1 543', icon: <Users className="w-5 h-5" />, trend: { value: 23, label: 'ce mois' }, color: 'text-success' },
-  { label: 'Revenus du mois', value: formatPrice(3850000), icon: <DollarSign className="w-5 h-5" />, trend: { value: 15, label: 'vs mois dernier' }, color: 'text-primary' },
-]
+export interface AdminDashboardProps {
+  stats: {
+    activeTrucks: number
+    activeBookings: number
+    totalUsers: number
+    monthlyRevenue: number
+  }
+  pendingTrucks: Array<{
+    id: string
+    brand: string
+    model: string
+    owner: string
+    city: string
+    submittedAt: string
+  }>
+  recentBookings: Array<{
+    id: string
+    number: string
+    client: string
+    truck: string
+    amount: number
+    status: string
+  }>
+  openDisputes: Array<{
+    id: string
+    bookingNumber: string
+    client: string
+    reason: string
+    amount: number
+    status: string
+    createdAt: string
+  }>
+}
 
-const pendingTrucks = [
-  { id: 't1', brand: 'Toyota', model: 'Land Cruiser', type: 'PICKUP', owner: 'Mamadou Keita', city: 'Bamako', submittedAt: new Date(Date.now() - 2 * 3600000).toISOString() },
-  { id: 't2', brand: 'Renault', model: 'Kangoo', type: 'CARGO_VAN', owner: 'Fatoumata Diallo', city: 'Bamako', submittedAt: new Date(Date.now() - 5 * 3600000).toISOString() },
-  { id: 't3', brand: 'MAN', model: 'TGS', type: 'SEMI_TRAILER', owner: 'Seydou Coulibaly', city: 'Sikasso', submittedAt: new Date(Date.now() - 24 * 3600000).toISOString() },
-]
-
-const recentBookings = [
-  { id: 'b1', number: 'DT2406ABC', client: 'Aminata Traoré', truck: 'Mercedes Actros', amount: 75000, status: 'PAYMENT_SECURED', createdAt: new Date(Date.now() - 1 * 3600000).toISOString() },
-  { id: 'b2', number: 'DT2406DEF', client: 'Ibrahim Koné', truck: 'Toyota Hilux', amount: 25000, status: 'IN_PROGRESS', createdAt: new Date(Date.now() - 3 * 3600000).toISOString() },
-  { id: 'b3', number: 'DT2406GHI', client: 'Kadiatou Sanogo', truck: 'Volvo FH', amount: 180000, status: 'COMPLETED', createdAt: new Date(Date.now() - 8 * 3600000).toISOString() },
-  { id: 'b4', number: 'DT2406JKL', client: 'Oumar Bah', truck: 'Isuzu NMR', amount: 65000, status: 'DISPUTED', createdAt: new Date(Date.now() - 24 * 3600000).toISOString() },
-]
-
-const openDisputes = [
-  { id: 'd1', booking: 'DT2406JKL', client: 'Oumar Bah', reason: 'Marchandises endommagées', amount: 65000, status: 'OPEN', createdAt: new Date(Date.now() - 6 * 3600000).toISOString() },
-  { id: 'd2', booking: 'DT2405MNO', client: 'Mariam Diarra', reason: 'Retard de livraison', amount: 35000, status: 'IN_ANALYSIS', createdAt: new Date(Date.now() - 2 * 24 * 3600000).toISOString() },
-]
-
-const navItems = [
-  { href: '/admin', label: 'Tableau de bord', icon: BarChart3 },
-  { href: '/admin/camions', label: 'Camions', icon: Truck, badge: 3 },
-  { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: Users },
-  { href: '/admin/reservations', label: 'Réservations', icon: Calendar },
-  { href: '/admin/paiements', label: 'Paiements', icon: DollarSign },
-  { href: '/admin/litiges', label: 'Litiges', icon: AlertTriangle, badge: 2 },
-  { href: '/admin/commissions', label: 'Commissions', icon: TrendingUp },
-  { href: '/admin/parametres', label: 'Paramètres', icon: Settings },
-]
-
-export function AdminDashboardContent() {
-  const [activeSection, setActiveSection] = React.useState('dashboard')
+export function AdminDashboardContent({ data }: { data: AdminDashboardProps }) {
+  const statCards = [
+    { label: 'Camions actifs', value: data.stats.activeTrucks.toString(), icon: <Truck className="w-5 h-5" />, trend: { value: 12, label: 'ce mois' }, color: 'text-primary' },
+    { label: 'Réservations actives', value: data.stats.activeBookings.toString(), icon: <Calendar className="w-5 h-5" />, trend: { value: 8, label: 'ce mois' }, color: 'text-accent' },
+    { label: 'Utilisateurs total', value: data.stats.totalUsers.toString(), icon: <Users className="w-5 h-5" />, trend: { value: 23, label: 'ce mois' }, color: 'text-success' },
+    { label: 'Revenus du mois', value: formatPrice(data.stats.monthlyRevenue), icon: <DollarSign className="w-5 h-5" />, trend: { value: 15, label: 'vs mois dernier' }, color: 'text-primary' },
+  ]
 
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map(stat => (
+        {statCards.map(stat => (
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
@@ -67,14 +69,14 @@ export function AdminDashboardContent() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-text flex items-center gap-2">
                 <Clock className="w-5 h-5 text-warning" />
-                Camions en attente ({pendingTrucks.length})
+                Camions en attente ({data.pendingTrucks.length})
               </h2>
               <Link href="/admin/camions" className="text-accent text-sm font-medium hover:underline">
                 Voir tout →
               </Link>
             </div>
             <div className="space-y-3">
-              {pendingTrucks.map(truck => (
+              {data.pendingTrucks.map(truck => (
                 <div key={truck.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-warning bg-opacity-10 rounded-xl flex items-center justify-center">
@@ -87,18 +89,20 @@ export function AdminDashboardContent() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-2 rounded-lg hover:bg-white transition-colors" title="Voir">
-                      <Eye className="w-4 h-4 text-muted" />
-                    </button>
+                    <Link href={`/admin/camions/${truck.id}`}>
+                      <button className="p-2 rounded-lg hover:bg-white transition-colors" title="Voir détails">
+                        <Eye className="w-4 h-4 text-muted" />
+                      </button>
+                    </Link>
                     <button
-                      onClick={() => alert(`Camion ${truck.id} validé !`)}
+                      onClick={() => alert(`Server Action à coder: Valider le camion ${truck.id}`)}
                       className="p-2 rounded-lg bg-success bg-opacity-10 hover:bg-success hover:text-white transition-colors text-success"
                       title="Valider"
                     >
                       <CheckCircle className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => alert(`Camion ${truck.id} refusé`)}
+                      onClick={() => alert(`Server Action à coder: Refuser le camion ${truck.id}`)}
                       className="p-2 rounded-lg bg-danger bg-opacity-10 hover:bg-danger hover:text-white transition-colors text-danger"
                       title="Refuser"
                     >
@@ -107,6 +111,9 @@ export function AdminDashboardContent() {
                   </div>
                 </div>
               ))}
+              {data.pendingTrucks.length === 0 && (
+                <p className="text-muted text-sm text-center py-4">Aucun camion en attente de validation.</p>
+              )}
             </div>
           </Card>
 
@@ -133,7 +140,7 @@ export function AdminDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {recentBookings.map(b => (
+                  {data.recentBookings.map(b => (
                     <tr key={b.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-3 font-mono text-xs text-muted">{b.number}</td>
                       <td className="py-3 font-medium text-text">{b.client}</td>
@@ -146,6 +153,11 @@ export function AdminDashboardContent() {
                       </td>
                     </tr>
                   ))}
+                  {data.recentBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-muted text-sm">Aucune réservation récente.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -159,11 +171,11 @@ export function AdminDashboardContent() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-text flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-danger" />
-                Litiges ouverts ({openDisputes.length})
+                Litiges ouverts ({data.openDisputes.length})
               </h2>
             </div>
             <div className="space-y-3">
-              {openDisputes.map(dispute => (
+              {data.openDisputes.map(dispute => (
                 <div key={dispute.id} className="p-3 bg-red-50 rounded-xl border border-red-100">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -178,15 +190,22 @@ export function AdminDashboardContent() {
                       </Badge>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" block className="mt-2">
-                    Traiter le litige
-                  </Button>
+                  <Link href={`/admin/litiges/${dispute.id}`}>
+                    <Button size="sm" variant="outline" block className="mt-2">
+                      Traiter le litige
+                    </Button>
+                  </Link>
                 </div>
               ))}
+              {data.openDisputes.length === 0 && (
+                <p className="text-muted text-sm text-center py-2">Aucun litige en cours 🎉</p>
+              )}
             </div>
-            <Link href="/admin/litiges" className="block text-center text-accent text-sm font-medium mt-3 hover:underline">
-              Voir tous les litiges →
-            </Link>
+            {data.openDisputes.length > 0 && (
+              <Link href="/admin/litiges" className="block text-center text-accent text-sm font-medium mt-3 hover:underline">
+                Voir tous les litiges →
+              </Link>
+            )}
           </Card>
 
           {/* Revenus semaine */}
@@ -196,21 +215,22 @@ export function AdminDashboardContent() {
               Revenus cette semaine
             </h2>
             <div className="space-y-2">
+              {/* Note: Pour la V2, récupérer ces stats par jour depuis Prisma */}
               {[
-                { day: 'Lun', amount: 450000 },
-                { day: 'Mar', amount: 680000 },
-                { day: 'Mer', amount: 520000 },
-                { day: 'Jeu', amount: 790000 },
-                { day: 'Ven', amount: 620000 },
-                { day: 'Sam', amount: 890000 },
-                { day: 'Dim', amount: 380000 },
+                { day: 'Lun', amount: 45000 },
+                { day: 'Mar', amount: 68000 },
+                { day: 'Mer', amount: 52000 },
+                { day: 'Jeu', amount: 79000 },
+                { day: 'Ven', amount: 62000 },
+                { day: 'Sam', amount: 89000 },
+                { day: 'Dim', amount: 38000 },
               ].map(day => (
                 <div key={day.day} className="flex items-center gap-2">
                   <span className="text-xs text-muted w-8">{day.day}</span>
                   <div className="flex-1 bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div
                       className="h-full bg-accent rounded-full transition-all duration-500"
-                      style={{ width: `${(day.amount / 890000) * 100}%` }}
+                      style={{ width: `${(day.amount / 89000) * 100}%` }}
                     />
                   </div>
                   <span className="text-xs font-medium text-text w-20 text-right">
@@ -221,7 +241,7 @@ export function AdminDashboardContent() {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between">
               <span className="text-muted text-sm">Total semaine</span>
-              <span className="font-bold text-success">{formatPrice(4330000)}</span>
+              <span className="font-bold text-success">{formatPrice(433000)}</span>
             </div>
           </Card>
 
@@ -231,7 +251,7 @@ export function AdminDashboardContent() {
             <div className="space-y-2">
               <Link href="/admin/camions?filter=pending">
                 <Button variant="outline" block size="sm" leftIcon={<Truck className="w-4 h-4" />}>
-                  Valider camions (3)
+                  Valider camions ({data.pendingTrucks.length})
                 </Button>
               </Link>
               <Link href="/admin/utilisateurs?filter=pending_kyc">

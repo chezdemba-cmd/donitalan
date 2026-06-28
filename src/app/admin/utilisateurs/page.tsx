@@ -1,19 +1,28 @@
 import React from 'react'
-import { Card } from '@/components/ui/Card'
-import { Users } from 'lucide-react'
+import prisma from '@/lib/prisma'
+import { AdminUsersClient } from '@/components/admin/AdminUsersClient'
 
-export default function AdminUsersPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <Users className="w-6 h-6 text-primary" />
-          Utilisateurs
-        </h1>
-      </div>
-      <Card>
-        <p className="text-muted text-center py-10">Interface de gestion des utilisateurs (Clients, Propriétaires, Chauffeurs) à venir.</p>
-      </Card>
-    </div>
-  )
+export const dynamic = 'force-dynamic'
+
+export default async function AdminUtilisateursPage() {
+  // Fetch all users
+  const usersDb = await prisma.user.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Format data for the client component
+  const usersData = usersDb.map(u => ({
+    id: u.id,
+    fullName: u.firstName + ' ' + u.lastName,
+    email: u.email,
+    phone: u.phone,
+    role: u.role,
+    status: u.status,
+    phoneVerified: u.phoneVerified,
+    createdAt: u.createdAt.toISOString()
+  }))
+
+  return <AdminUsersClient initialUsers={usersData} />
 }

@@ -1,19 +1,38 @@
 import React from 'react'
-import { Card } from '@/components/ui/Card'
-import { Truck } from 'lucide-react'
+import prisma from '@/lib/prisma'
+import { AdminTrucksClient } from '@/components/admin/AdminTrucksClient'
 
-export default function AdminCamionsPage() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <Truck className="w-6 h-6 text-primary" />
-          Gestion des Camions
-        </h1>
-      </div>
-      <Card>
-        <p className="text-muted text-center py-10">Interface de gestion complète des camions à venir.</p>
-      </Card>
-    </div>
-  )
+export const dynamic = 'force-dynamic'
+
+export default async function AdminCamionsPage() {
+  // Fetch all trucks with their owners and cities
+  const trucksDb = await prisma.truck.findMany({
+    include: {
+      owner: {
+        include: {
+          user: true
+        }
+      },
+      city: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Format data for the client component
+  const trucksData = trucksDb.map(t => ({
+    id: t.id,
+    brand: t.brand,
+    model: t.model,
+    licensePlate: t.licensePlate,
+    type: t.truckType,
+    basePrice: Number(t.basePrice),
+    status: t.status,
+    createdAt: t.createdAt.toISOString(),
+    ownerName: t.owner.user.firstName + ' ' + t.owner.user.lastName,
+    cityName: t.city.name
+  }))
+
+  return <AdminTrucksClient initialTrucks={trucksData} />
 }
