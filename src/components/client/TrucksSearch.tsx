@@ -32,71 +32,27 @@ const CITIES = [
   { value: 'mopti', label: 'Mopti' },
 ]
 
-// Demo trucks for MVP
-const DEMO_TRUCKS = [
-  {
-    id: 'truck-1', brand: 'Mercedes', model: 'Actros', year: 2019,
-    truckType: 'TARPAULIN' as TruckType, capacityTons: 20, volumeM3: 80,
-    basePrice: 45000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.8, totalTrips: 87,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Moussa', lastName: 'Diarra' } },
-    status: 'VALIDATED', zones: ['Bamako', 'Ségou'],
-    description: 'Camion bâché en excellent état, avec chauffeur expérimenté. Disponible 7j/7.',
-  },
-  {
-    id: 'truck-2', brand: 'Toyota', model: 'Hilux', year: 2021,
-    truckType: 'PICKUP' as TruckType, capacityTons: 1.5, volumeM3: 8,
-    basePrice: 15000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.9, totalTrips: 134,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Aminata', lastName: 'Koné' } },
-    status: 'VALIDATED', zones: ['Bamako'],
-    description: 'Pick-up robuste pour petits déménagements et livraisons. Disponible en moins de 2h.',
-  },
-  {
-    id: 'truck-3', brand: 'Renault', model: 'Master', year: 2020,
-    truckType: 'CARGO_VAN' as TruckType, capacityTons: 3.5, volumeM3: 20,
-    basePrice: 25000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.7, totalTrips: 62,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Ibrahim', lastName: 'Traoré' } },
-    status: 'VALIDATED', zones: ['Bamako', 'Kayes'],
-    description: 'Fourgon idéal pour déménagement appartement ou bureau.',
-  },
-  {
-    id: 'truck-4', brand: 'Volvo', model: 'FH 540', year: 2018,
-    truckType: 'SEMI_TRAILER' as TruckType, capacityTons: 40, volumeM3: 120,
-    basePrice: 120000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.6, totalTrips: 45,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Seydou', lastName: 'Coulibaly' } },
-    status: 'VALIDATED', zones: ['Bamako', 'Sikasso', 'Ségou', 'Kayes'],
-    description: 'Semi-remorque pour grandes charges et transport longue distance.',
-  },
-  {
-    id: 'truck-5', brand: 'Isuzu', model: 'NMR', year: 2020,
-    truckType: 'TIPPER' as TruckType, capacityTons: 8, volumeM3: 15,
-    basePrice: 55000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.5, totalTrips: 78,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Fatoumata', lastName: 'Sanogo' } },
-    status: 'VALIDATED', zones: ['Bamako'],
-    description: 'Benne pour sable, gravier, déchets de chantier. Déchargement automatique.',
-  },
-  {
-    id: 'truck-6', brand: 'Mitsubishi', model: 'Canter', year: 2019,
-    truckType: 'FLATBED' as TruckType, capacityTons: 5, volumeM3: 25,
-    basePrice: 35000, currency: 'XOF', withDriver: true,
-    photoUrls: [], averageRating: 4.7, totalTrips: 52,
-    city: { name: 'Bamako' },
-    owner: { user: { firstName: 'Oumar', lastName: 'Bah' } },
-    status: 'VALIDATED', zones: ['Bamako', 'Koulikoro'],
-    description: 'Plateau pour machines, équipements industriels, mobilier encombrant.',
-  },
-]
+export type ClientTruckData = {
+  id: string
+  brand: string
+  model: string
+  year: number
+  truckType: TruckType
+  capacityTons: number
+  volumeM3: number | null
+  basePrice: number
+  pricePerKm: number | null
+  currency: string
+  withDriver: boolean
+  averageRating: number
+  totalTrips: number
+  city: { name: string }
+  zones: string[]
+  description: string
+  owner: { user: { firstName: string, lastName: string } }
+}
 
-export function TrucksSearchPage() {
+export function TrucksSearchPage({ initialTrucks }: { initialTrucks: ClientTruckData[] }) {
   const searchParams = useSearchParams()
   const [search, setSearch] = React.useState('')
   const [truckType, setTruckType] = React.useState(searchParams.get('type') || '')
@@ -106,8 +62,8 @@ export function TrucksSearchPage() {
   const [showFilters, setShowFilters] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
 
-  // Filter trucks from demo data
-  const trucks = DEMO_TRUCKS.filter(truck => {
+  // Filter trucks
+  const trucks = initialTrucks.filter(truck => {
     if (search && !`${truck.brand} ${truck.model}`.toLowerCase().includes(search.toLowerCase())) return false
     if (truckType && truck.truckType !== truckType) return false
     if (city && !truck.zones.some(z => z.toLowerCase().includes(city.toLowerCase()))) return false
@@ -259,7 +215,7 @@ export function TrucksSearchPage() {
   )
 }
 
-function TruckCard({ truck }: { truck: typeof DEMO_TRUCKS[0] }) {
+function TruckCard({ truck }: { truck: ClientTruckData }) {
   const truckImages: Record<TruckType, string> = {
     PICKUP: '/images/trucks/pickup.png', MINIVAN: '/images/trucks/cargo_van.png', 
     CARGO_VAN: '/images/trucks/cargo_van.png', TARPAULIN: '/images/trucks/tarpaulin.png',

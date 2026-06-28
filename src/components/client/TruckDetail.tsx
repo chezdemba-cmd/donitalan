@@ -15,39 +15,7 @@ import { BottomNav } from '@/components/shared/Navigation'
 import { TRUCK_TYPE_LABELS, SERVICE_TYPE_LABELS, type TruckType, type ServiceType } from '@/types'
 import { formatPrice, calculatePrice } from '@/lib/utils'
 
-// Demo truck data
-const getDemoTruck = (id: string) => ({
-  id,
-  brand: 'Mercedes', model: 'Actros', year: 2019,
-  licensePlate: 'BK-2019-A',
-  truckType: 'TARPAULIN' as TruckType,
-  capacityTons: 20, volumeM3: 80,
-  basePrice: 45000, pricePerKm: 200, pricePerHour: 5000,
-  currency: 'XOF',
-  withDriver: true,
-  photoUrls: [],
-  averageRating: 4.8, totalTrips: 87,
-  city: { name: 'Bamako', country: { name: 'Mali', flag: '🇲🇱' } },
-  zones: ['Bamako', 'Ségou', 'Kayes', 'Sikasso'],
-  description: 'Camion bâché Mercedes Actros en excellent état, régulièrement entretenu. Chauffeur professionnel avec 10 ans d\'expérience. Disponible 7j/7, possibilité de missions urgentes. Livraison dans toute la région de Bamako et grandes villes du Mali.',
-  owner: {
-    id: 'owner-1',
-    user: { firstName: 'Moussa', lastName: 'Diarra', avatarUrl: undefined, phone: '+22370000001' },
-    kycStatus: 'VERIFIED',
-    totalEarnings: 2800000,
-  },
-  documents: [
-    { docType: 'CARTE_GRISE', verified: true },
-    { docType: 'ASSURANCE', verified: true },
-    { docType: 'VISITE_TECHNIQUE', verified: true },
-    { docType: 'PERMIS_CHAUFFEUR', verified: true },
-  ],
-  reviews: [
-    { id: 'r1', rating: 5, comment: 'Parfait ! Très professionnel, ponctuel.', createdAt: '2024-05-15', author: { firstName: 'Kadiatou', lastName: 'Traoré', avatarUrl: undefined } },
-    { id: 'r2', rating: 5, comment: 'Excellent service, camion propre et en bon état.', createdAt: '2024-05-10', author: { firstName: 'Ibrahim', lastName: 'Koné', avatarUrl: undefined } },
-    { id: 'r3', rating: 4, comment: 'Bon service, léger retard mais très professionnel.', createdAt: '2024-04-28', author: { firstName: 'Aminata', lastName: 'Diallo', avatarUrl: undefined } },
-  ],
-})
+import { createBooking } from '@/app/actions/client'
 
 interface BookingFormData {
   serviceType: ServiceType
@@ -61,9 +29,45 @@ interface BookingFormData {
   isUrgent: boolean
 }
 
-export function TruckDetailPage({ truckId }: { truckId: string }) {
+export interface ClientDetailTruckData {
+  id: string
+  brand: string
+  model: string
+  year: number
+  licensePlate: string
+  truckType: TruckType
+  capacityTons: number
+  volumeM3: number | null
+  basePrice: number
+  pricePerKm: number | null
+  pricePerHour: number | null
+  currency: string
+  withDriver: boolean
+  photoUrls: string[]
+  averageRating: number
+  totalTrips: number
+  city: { name: string; country: { name: string; flag: string | null } }
+  zones: string[]
+  description: string
+  owner: {
+    id: string
+    user: { firstName: string; lastName: string; phone: string | null; avatarUrl: string | null }
+    kycStatus: string
+    totalEarnings: number
+  }
+  documents: { docType: string; verified: boolean }[]
+  reviews: {
+    id: string
+    rating: number
+    comment: string
+    createdAt: string
+    author: { firstName: string; lastName: string; avatarUrl: string | null }
+  }[]
+}
+
+export function TruckDetailPage({ initialTruck }: { initialTruck: ClientDetailTruckData }) {
   const router = useRouter()
-  const truck = getDemoTruck(truckId)
+  const truck = initialTruck
   const [showBookingModal, setShowBookingModal] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [formData, setFormData] = React.useState<BookingFormData>({
@@ -81,7 +85,7 @@ export function TruckDetailPage({ truckId }: { truckId: string }) {
   const pricing = calculatePrice({
     basePrice: truck.basePrice,
     distanceKm: formData.estimatedDistKm,
-    pricePerKm: truck.pricePerKm,
+    pricePerKm: truck.pricePerKm ?? undefined,
     nbHandlers: formData.nbHandlers,
     isUrgent: formData.isUrgent,
     commissionPercent: 12,
@@ -95,10 +99,18 @@ export function TruckDetailPage({ truckId }: { truckId: string }) {
 
     setLoading(true)
     try {
-      // In MVP, redirect to payment page
-      toast.success('Réservation créée ! Procédez au paiement.')
-      setShowBookingModal(false)
-      router.push(`/paiement?truckId=${truckId}&amount=${pricing.totalPrice}`)
+      const result = await createBooking({
+        truckId: truck.id,
+        ...formData
+      })
+
+      if (result.success) {
+        toast.success('Réservation créée ! Procédez au paiement.')
+        setShowBookingModal(false)
+        router.push(`/paiement?bookingId=${result.bookingId}&amount=${result.amount}`)
+      } else {
+        toast.error(result.message || 'Erreur lors de la réservation')
+      }
     } catch {
       toast.error('Erreur. Réessayez.')
     } finally {
@@ -138,7 +150,7 @@ export function TruckDetailPage({ truckId }: { truckId: string }) {
             <div className="flex items-start justify-between gap-4 mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-text">{truck.brand} {truck.model} {truck.year}</h1>
-                <p className="text-muted">{TRUCK_TYPE_LABELS[truck.truckType]}</p>
+                <p className="text-muted">{TRUCK_TYPE_LABELS[truck.truckType as TruckType]}</p>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-accent">{formatPrice(truck.basePrice)}</div>
@@ -259,7 +271,7 @@ export function TruckDetailPage({ truckId }: { truckId: string }) {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Transport (~10km)</span>
-                <span className="font-medium">{formatPrice(truck.pricePerKm! * 10)}</span>
+                <span className="font-medium">{formatPrice((truck.pricePerKm || 0) * 10)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted">Commission plateforme (12%)</span>
@@ -383,7 +395,7 @@ export function TruckDetailPage({ truckId }: { truckId: string }) {
               <span className="text-accent">{formatPrice(calculatePrice({
                 basePrice: truck.basePrice,
                 distanceKm: formData.estimatedDistKm,
-                pricePerKm: truck.pricePerKm,
+                pricePerKm: truck.pricePerKm ?? undefined,
                 nbHandlers: formData.nbHandlers,
                 isUrgent: formData.isUrgent,
               }).totalPrice)}</span>
