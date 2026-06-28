@@ -18,10 +18,9 @@ export default async function AdminDisputesPage() {
     bookingNumber: d.booking.bookingNumber,
     clientName: d.client ? d.client.user.firstName + ' ' + d.client.user.lastName : 'Inconnu',
     reason: d.reason,
-    description: d.description,
     status: d.status,
-    amount: Number(d.booking.totalPrice), // Simplified for MVP
-    createdAt: d.createdAt.toISOString()
+    createdAt: d.createdAt.toISOString(),
+    openedBy: 'Client' // Simplifié pour le moment
   }))
 
   return <AdminDisputesClient initialDisputes={disputesData} />
